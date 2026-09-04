@@ -1,0 +1,38 @@
+
+<%@ page pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="icon-box"><i class="ti ti-home"></i></div>
+    <div>
+      <div class="name">HESTIA</div>
+      <div class="sub">SMART HOME</div>
+    </div>
+  </div>
+
+  <div class="sidebar-nav">
+    <a href="/dashboard" class="nav-item ${activePage == 'dashboard' ? 'active' : ''}">
+      <i class="ti ti-layout-dashboard"></i> Tổng quan
+    </a>
+    <a href="/sensors" class="nav-item ${activePage == 'sensors' ? 'active' : ''}">
+      <i class="ti ti-cpu"></i> Cảm biến
+    </a>
+    <a href="/devices/history" class="nav-item ${activePage == 'history' ? 'active' : ''}">
+      <i class="ti ti-history"></i> Lịch sử thiết bị
+    </a>
+    <a href="/account" class="nav-item ${activePage == 'account' ? 'active' : ''}">
+      <i class="ti ti-user"></i> Tài khoản
+    </a>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <c:set var="displayName" value="${empty sessionScope.fullName ? 'Khach' : sessionScope.fullName}" />
+      <div class="user-avatar">${displayName.substring(0,1)}</div>
+      <div>${displayName}</div>
+    </div>
+    <button class="logout-btn" id="logoutBtn"><i class="ti ti-logout"></i> Đăng xuất</button>
+  </div>
+</div>
+
+<script src="/assets/js/logout.js"></script>
