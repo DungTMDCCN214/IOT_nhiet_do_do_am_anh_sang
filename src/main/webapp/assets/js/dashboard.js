@@ -21,6 +21,7 @@ const OPTIMAL_RANGES = {
 };
 
 let chartInstance = null;
+let realtimeRefreshTimer = null;
 
 function renderSensorCards(data) {
   const container = document.getElementById("sensorCards");
@@ -98,6 +99,7 @@ function renderDeviceList(devices) {
 
   devices.forEach((device) => {
     const checked = device.currentStatus === "ON" ? "checked" : "";
+    const pending = device.currentStatus === "PENDING";
     container.innerHTML += `
       <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border);">
         <div>
@@ -105,7 +107,7 @@ function renderDeviceList(devices) {
           <div style="font-size:12px; color:var(--text-secondary);">Status: ${device.currentStatus}</div>
         </div>
         <label class="toggle-switch">
-          <input type="checkbox" ${checked} onchange="controlDevice('${device.deviceId}', this.checked)">
+          <input type="checkbox" ${checked} ${pending ? "disabled" : ""} onchange="controlDevice('${device.deviceId}', this.checked)">
           <span class="toggle-track"></span>
         </label>
       </div>`;
@@ -155,10 +157,32 @@ function loadDevices() {
     .catch(() => {});
 }
 
+function refreshRealtimeSensorData() {
+  clearTimeout(realtimeRefreshTimer);
+  realtimeRefreshTimer = setTimeout(() => {
+    loadSensorData();
+    loadChartData();
+  }, 150);
+}
+
+function connectSensorWebSocket() {
+  const socket = new SockJS("/ws");
+  const stompClient = Stomp.over(socket);
+  stompClient.debug = null;
+
+  stompClient.connect({}, () => {
+    stompClient.subscribe("/topic/sensors", refreshRealtimeSensorData);
+    stompClient.subscribe("/topic/devices", loadDevices);
+  }, () => {
+    setTimeout(connectSensorWebSocket, 5000);
+  });
+}
+
 // Load lần đầu
 loadSensorData();
 loadChartData();
 loadDevices();
+connectSensorWebSocket();
 
 // Làm mới định kỳ mỗi 5 giây — đúng luồng UC01/UC05 đã mô tả
 setInterval(() => {

@@ -1,4 +1,5 @@
 C:\Users\Admin\Desktop\IOT\hestia\src\main\java\com\hestia\smarthome\entity\Device.java
+C:\Users\Admin\Desktop\IOT\hestia\src\main\java\com\hestia\smarthome\mqtt\DeviceStatusListener.java
 C:\Users\Admin\Desktop\IOT\hestia\src\main\java\com\hestia\smarthome\mqtt\HistoryTimeoutChecker.java
 C:\Users\Admin\Desktop\IOT\hestia\src\main\java\com\hestia\smarthome\controller\SensorController.java
 C:\Users\Admin\Desktop\IOT\hestia\src\main\java\com\hestia\smarthome\entity\User.java
@@ -16,5 +17,6 @@ C:\Users\Admin\Desktop\IOT\hestia\src\main\java\com\hestia\smarthome\repository\
 C:\Users\Admin\Desktop\IOT\hestia\src\main\java\com\hestia\smarthome\controller\UserController.java
 C:\Users\Admin\Desktop\IOT\hestia\src\main\java\com\hestia\smarthome\controller\DeviceController.java
 C:\Users\Admin\Desktop\IOT\hestia\src\main\java\com\hestia\smarthome\viewcontroller\PageController.java
+C:\Users\Admin\Desktop\IOT\hestia\src\main\java\com\hestia\smarthome\config\WebSocketConfig.java
 C:\Users\Admin\Desktop\IOT\hestia\src\main\java\com\hestia\smarthome\entity\Sensor.java
 C:\Users\Admin\Desktop\IOT\hestia\src\main\java\com\hestia\smarthome\mqtt\SensorDataListener.java

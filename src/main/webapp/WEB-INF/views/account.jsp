@@ -14,6 +14,7 @@
   <%@ include file="/includes/sidebar.jspf" %>
 
   <div class="main-content">
+    <!-- ===== PAGE HEADER ===== -->
     <div class="page-header">
       <div>
         <h1>Tài khoản</h1>
@@ -24,20 +25,22 @@
       </div>
     </div>
 
-    <!-- Khối avatar + tên + mã SV + vai trò -->
+    <!-- ===== PROFILE HEADER ===== -->
     <div class="card profile-card" id="profileHeader">
       <div class="profile-avatar-wrap">
         <div class="profile-avatar" id="profileAvatar">?</div>
         <div class="avatar-edit-badge"><i class="ti ti-camera"></i></div>
       </div>
-      <div>
+      <div class="profile-info">
         <div class="profile-name" id="profileName">--</div>
         <div class="profile-meta">
-          Mã sinh viên: <b id="profileStudentCode">--</b> &nbsp;•&nbsp; Vai trò: <b id="profileRole">--</b>
+          Mã sinh viên: <b id="profileStudentCode">--</b> &nbsp;•&nbsp;
+          Vai trò: <b id="profileRole">--</b>
         </div>
       </div>
     </div>
 
+    <!-- ===== THÔNG TIN CÁ NHÂN + TÀI LIỆU HỆ THỐNG ===== -->
     <div class="two-col-grid">
       <!-- Thông tin cá nhân -->
       <div class="card">
@@ -72,13 +75,16 @@
       </div>
     </div>
 
-    <!-- Liên kết tích hợp hệ thống -->
-    <div class="section-title">Liên kết tích hợp hệ thống</div>
+    <!-- ===== LIÊN KẾT TÍCH HỢP HỆ THỐNG ===== -->
+    <div class="section-title section-title--spaced">Liên kết tích hợp hệ thống</div>
     <div class="integration-grid">
+      <!-- API Access -->
       <div class="integration-card">
         <div class="integration-head">
           <div>
-            <div class="integration-title"><i class="ti ti-key" style="color:var(--primary);"></i> API Access</div>
+            <div class="integration-title">
+              <i class="ti ti-key" style="color:var(--primary);"></i> API Access
+            </div>
             <div class="integration-sub">Khóa truy cập API</div>
           </div>
           <span class="badge-success" id="apiKeyStatus">--</span>
@@ -87,10 +93,13 @@
         <button class="btn-outline btn-full" id="regenApiKeyBtn">Tạo lại khóa</button>
       </div>
 
+      <!-- GitHub -->
       <div class="integration-card">
         <div class="integration-head">
           <div>
-            <div class="integration-title"><i class="ti ti-brand-github"></i> GitHub</div>
+            <div class="integration-title">
+              <i class="ti ti-brand-github"></i> GitHub
+            </div>
             <div class="integration-sub">Kết nối kho mã nguồn</div>
           </div>
           <span class="badge-success" id="githubStatus">--</span>
@@ -99,10 +108,13 @@
         <button class="btn-outline btn-full">Quản lý</button>
       </div>
 
+      <!-- Figma -->
       <div class="integration-card">
         <div class="integration-head">
           <div>
-            <div class="integration-title"><i class="ti ti-brand-figma"></i> Figma</div>
+            <div class="integration-title">
+              <i class="ti ti-brand-figma"></i> Figma
+            </div>
             <div class="integration-sub">Kết nối thiết kế</div>
           </div>
           <span class="badge-success" id="figmaStatus">--</span>

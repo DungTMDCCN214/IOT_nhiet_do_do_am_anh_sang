@@ -8,6 +8,9 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="/assets/css/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 </head>
 <body>
 <div class="app-layout">
@@ -26,7 +29,7 @@
       <!-- JS render động -->
     </div>
 
-    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:16px;">
+    <div class="dashboard-grid">
       <!-- Biểu đồ 12h -->
       <div class="card">
         <div style="font-weight:600; margin-bottom:12px;">Lịch sử chỉ số cảm biến (12h qua)</div>

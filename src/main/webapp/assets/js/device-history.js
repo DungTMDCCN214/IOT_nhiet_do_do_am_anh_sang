@@ -1,4 +1,12 @@
-let state = { page: 0, limit: 10, deviceId: "", keyword: "", range: "" };
+let state = {
+  page: 0,
+  limit: 10,
+  deviceId: "",
+  action: "",
+  status: "",
+  keyword: "",
+  range: "",
+};
 
 function formatDateTime(iso) {
   const d = new Date(iso);
@@ -37,18 +45,23 @@ function loadDeviceOptions() {
     .then((res) => res.json())
     .then((devices) => {
       const select = document.getElementById("deviceFilter");
+      const selectedDeviceId = select.value;
+      select.innerHTML = '<option value="">Tất cả</option>';
       devices.forEach((d) => {
         const opt = document.createElement("option");
         opt.value = d.deviceId;
         opt.textContent = `${d.deviceId} - ${d.deviceName}`;
         select.appendChild(opt);
       });
+      select.value = selectedDeviceId;
     });
 }
 
 function loadTable() {
   const params = new URLSearchParams({ page: state.page, limit: state.limit });
   if (state.deviceId) params.set("deviceId", state.deviceId);
+  if (state.action) params.set("action", state.action);
+  if (state.status) params.set("status", state.status);
   if (state.keyword) params.set("keyword", state.keyword);
   if (state.range) params.set("range", state.range);
 
@@ -134,6 +147,8 @@ function renderFooter(total, page) {
 function applyFiltersAndSearch() {
   state.keyword = document.getElementById("searchInput").value.trim();
   state.deviceId = document.getElementById("deviceFilter").value;
+  state.action = document.getElementById("actionFilter").value;
+  state.status = document.getElementById("statusFilter").value;
   state.limit = parseInt(document.getElementById("limitFilter").value, 10);
   state.page = 0;
   loadTable();
@@ -144,8 +159,36 @@ document
   .addEventListener("click", applyFiltersAndSearch);
 
 // Enter trong ô tìm kiếm cũng kích hoạt tìm kiếm
-document.getElementById("searchInput").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") applyFiltersAndSearch();
+
+document.getElementById("refreshBtn").addEventListener("click", () => {
+  const button = document.getElementById("refreshBtn");
+  button.disabled = true;
+  button.classList.add("is-loading");
+
+  state = {
+    page: 0,
+    limit: 10,
+    deviceId: "",
+    action: "",
+    status: "",
+    keyword: "",
+    range: "",
+  };
+  document.getElementById("searchInput").value = "";
+  document.getElementById("deviceFilter").value = "";
+  document.getElementById("actionFilter").value = "";
+  document.getElementById("statusFilter").value = "";
+  document.getElementById("limitFilter").value = "10";
+  document
+    .querySelectorAll("#rangeButtons button")
+    .forEach((rangeButton) => rangeButton.classList.remove("active"));
+
+  loadTable();
+  loadStatusSummary();
+  window.setTimeout(() => {
+    button.disabled = false;
+    button.classList.remove("is-loading");
+  }, 500);
 });
 
 document.querySelectorAll("#rangeButtons button").forEach((btn) => {

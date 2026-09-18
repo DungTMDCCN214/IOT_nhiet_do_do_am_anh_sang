@@ -33,6 +33,15 @@ public class MqttConfig {
     @Value("${mqtt.client.id.out}")
     private String clientIdOut;
 
+    @Value("${mqtt.topic.sensor}")
+    private String sensorTopic;
+
+    @Value("${mqtt.topic.control}")
+    private String controlTopic;
+
+    @Value("${mqtt.topic.status}")
+    private String statusTopic;
+
     @Bean
     public MqttPahoClientFactory mqttClientFactory() {
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
@@ -47,18 +56,34 @@ public class MqttConfig {
 
     // ---------- Kênh nhận dữ liệu (subscribe) ----------
     @Bean
-    public MessageChannel mqttInputChannel() {
+    public MessageChannel mqttSensorInputChannel() {
+        return new DirectChannel();
+    }
+
+    @Bean
+    public MessageChannel mqttDeviceStatusInputChannel() {
         return new DirectChannel();
     }
 
     @Bean
     public MqttPahoMessageDrivenChannelAdapter inbound() {
         MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(
-                clientIdIn, mqttClientFactory(), "sensor/data", "device/status");
+                clientIdIn + "-sensor", mqttClientFactory(), sensorTopic);
         adapter.setCompletionTimeout(5000);
         adapter.setConverter(new DefaultPahoMessageConverter());
         adapter.setQos(1);
-        adapter.setOutputChannel(mqttInputChannel());
+        adapter.setOutputChannel(mqttSensorInputChannel());
+        return adapter;
+    }
+
+    @Bean
+    public MqttPahoMessageDrivenChannelAdapter inboundDeviceStatus() {
+        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(
+                clientIdIn + "-status", mqttClientFactory(), statusTopic);
+        adapter.setCompletionTimeout(5000);
+        adapter.setConverter(new DefaultPahoMessageConverter());
+        adapter.setQos(1);
+        adapter.setOutputChannel(mqttDeviceStatusInputChannel());
         return adapter;
     }
 
@@ -74,7 +99,7 @@ public class MqttConfig {
         MqttPahoMessageHandler handler = new MqttPahoMessageHandler(clientIdOut, mqttClientFactory());
         handler.setAsync(true);
         handler.setDefaultQos(1);
-        handler.setDefaultTopic("device/control");
+        handler.setDefaultTopic(controlTopic);
         return handler;
     }
 }

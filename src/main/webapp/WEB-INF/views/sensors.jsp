@@ -30,7 +30,7 @@
           <label>Tìm kiếm nhanh</label>
           <div class="search-input-wrap">
             <i class="ti ti-search"></i>
-            <input type="text" id="searchInput" placeholder="Tìm kiếm theo mã hoặc loại cảm biến...">
+            <input type="text" id="searchInput" placeholder="Tìm kiếm theo mã bản ghi">
           </div>
         </div>
 
@@ -53,17 +53,9 @@
           </select>
         </div>
 
-        <div class="filter-group">
-          <label>Phạm vi thời gian</label>
-          <div class="range-buttons" id="rangeButtons">
-            <button data-range="month">Tháng</button>
-            <button data-range="day">Ngày</button>
-            <button data-range="hour">Giờ</button>
-            <button data-range="" class="active">Tất cả</button>
-          </div>
-        </div>
-
-        <button class="icon-btn" id="refreshBtn"><i class="ti ti-refresh"></i></button>
+        
+        <button class="search-btn" id="searchBtn"><i class="ti ti-search"></i> Tìm kiếm</button>
+        <button type="button" class="icon-btn" id="refreshBtn" title="Làm mới dữ liệu" aria-label="Làm mới dữ liệu"><i class="ti ti-refresh"></i></button>
       </div>
 
       <table>

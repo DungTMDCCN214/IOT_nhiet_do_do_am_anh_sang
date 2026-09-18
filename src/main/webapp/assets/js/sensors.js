@@ -149,8 +149,24 @@ document.querySelectorAll("#rangeButtons button").forEach((btn) => {
 });
 
 document.getElementById("refreshBtn").addEventListener("click", () => {
+  const button = document.getElementById("refreshBtn");
+  button.disabled = true;
+  button.classList.add("is-loading");
+
+  state = { page: 0, limit: 10, type: "", keyword: "", range: "" };
+  document.getElementById("searchInput").value = "";
+  document.getElementById("typeFilter").value = "";
+  document.getElementById("limitFilter").value = "10";
+  document
+    .querySelectorAll("#rangeButtons button")
+    .forEach((rangeButton) => rangeButton.classList.remove("active"));
+
   loadTable();
   loadStatusSummary();
+  window.setTimeout(() => {
+    button.disabled = false;
+    button.classList.remove("is-loading");
+  }, 500);
 });
 
 loadStatusSummary();

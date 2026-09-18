@@ -42,6 +42,25 @@
         </div>
 
         <div class="filter-group">
+          <label>H&agrave;nh &#273;&#7897;ng</label>
+          <select class="filter-select" id="actionFilter">
+            <option value="">T&#7845;t c&#7843;</option>
+            <option value="on">B&#7853;t</option>
+            <option value="off">T&#7855;t</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Tr&#7841;ng th&aacute;i</label>
+          <select class="filter-select" id="statusFilter">
+            <option value="">T&#7845;t c&#7843;</option>
+            <option value="Pending">&#272;ang x&#7917; l&yacute;</option>
+            <option value="Success">Th&agrave;nh c&ocirc;ng</option>
+            <option value="Error">Th&#7845;t b&#7841;i</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
           <label>Số lượng</label>
           <select class="filter-select" id="limitFilter">
             <option value="10">10 bản ghi</option>
@@ -50,17 +69,8 @@
           </select>
         </div>
 
-        <div class="filter-group">
-          <label>Phạm vi thời gian</label>
-          <div class="range-buttons" id="rangeButtons">
-            <button data-range="month">Tháng</button>
-            <button data-range="day">Ngày</button>
-            <button data-range="hour">Giờ</button>
-            <button data-range="" class="active">Tất cả</button>
-          </div>
-        </div>
-
         <button class="search-btn" id="searchBtn"><i class="ti ti-search"></i> Tìm kiếm</button>
+        <button type="button" class="icon-btn" id="refreshBtn" title="Làm mới dữ liệu" aria-label="Làm mới dữ liệu"><i class="ti ti-refresh"></i></button>
       </div>
 
       <table>

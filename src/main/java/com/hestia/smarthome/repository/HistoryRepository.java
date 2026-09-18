@@ -14,13 +14,6 @@ import java.util.Optional;
 public interface HistoryRepository extends JpaRepository<History, Long> {
 
     // Tra cứu lịch sử điều khiển thiết bị có lọc -> UC04
-    @Query("SELECT h FROM History h WHERE " +
-           "(:deviceId IS NULL OR h.device.deviceId = :deviceId) AND " +
-           "(:from IS NULL OR h.performedAt >= :from)")
-    Page<History> search(@Param("deviceId") String deviceId,
-                          @Param("from") LocalDateTime from,
-                          Pageable pageable);
-
     // Tìm bản ghi Pending gần nhất của một thiết bị -> dùng khi nhận phản hồi MQTT (device/status)
     Optional<History> findTopByDevice_DeviceIdAndStatusOrderByPerformedAtDesc(String deviceId, String status);
 
@@ -30,9 +23,13 @@ public interface HistoryRepository extends JpaRepository<History, Long> {
         "(:deviceId IS NULL OR h.device.deviceId = :deviceId) AND " +
         "(:keyword IS NULL OR h.device.deviceId LIKE CONCAT('%', :keyword, '%') " +
         "  OR h.device.deviceName LIKE CONCAT('%', :keyword, '%')) AND " +
+        "(:action IS NULL OR h.action = :action) AND " +
+        "(:status IS NULL OR h.status = :status) AND " +
         "(:from IS NULL OR h.performedAt >= :from)")
     Page<History> search(@Param("deviceId") String deviceId,
                         @Param("keyword") String keyword,
+                        @Param("action") String action,
+                        @Param("status") String status,
                         @Param("from") LocalDateTime from,
                         Pageable pageable);
 }

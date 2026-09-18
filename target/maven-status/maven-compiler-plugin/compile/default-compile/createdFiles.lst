@@ -1,5 +1,6 @@
 com\hestia\smarthome\controller\DeviceController.class
 com\hestia\smarthome\repository\DeviceRepository.class
+com\hestia\smarthome\mqtt\DeviceStatusListener.class
 com\hestia\smarthome\controller\UserController.class
 com\hestia\smarthome\entity\User.class
 com\hestia\smarthome\repository\HistoryRepository.class
@@ -9,6 +10,7 @@ com\hestia\smarthome\mqtt\MqttGateway.class
 com\hestia\smarthome\entity\Sensor.class
 com\hestia\smarthome\HestiaSmarthomeApplication.class
 com\hestia\smarthome\mqtt\SensorDataListener.class
+com\hestia\smarthome\config\WebSocketConfig.class
 com\hestia\smarthome\entity\Device.class
 com\hestia\smarthome\viewcontroller\PageController.class
 com\hestia\smarthome\entity\History.class

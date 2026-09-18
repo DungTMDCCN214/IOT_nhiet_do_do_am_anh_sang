@@ -1,6 +1,5 @@
 package com.hestia.smarthome.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hestia.smarthome.entity.Device;
 import com.hestia.smarthome.entity.History;
 import com.hestia.smarthome.entity.User;
@@ -9,12 +8,14 @@ import com.hestia.smarthome.repository.DeviceRepository;
 import com.hestia.smarthome.repository.HistoryRepository;
 import com.hestia.smarthome.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -30,7 +31,9 @@ public class DeviceController {
     private final HistoryRepository historyRepository;
     private final UserRepository userRepository;
     private final MqttGateway mqttGateway;
-    private final ObjectMapper objectMapper;
+
+    @Value("${mqtt.topic.control}")
+    private String controlTopic;
 
     public DeviceController(DeviceRepository deviceRepository,
                              HistoryRepository historyRepository,
@@ -40,7 +43,6 @@ public class DeviceController {
         this.historyRepository = historyRepository;
         this.userRepository = userRepository;
         this.mqttGateway = mqttGateway;
-        this.objectMapper = new ObjectMapper();
     }
 
     /**
@@ -79,6 +81,13 @@ public class DeviceController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
 
+            String firmwareDeviceId = resolveFirmwareDeviceId(device.getDeviceId());
+            if (firmwareDeviceId == null) {
+                response.put("success", false);
+                response.put("message", "Device has no firmware mapping");
+                return ResponseEntity.badRequest().body(response);
+            }
+
             // Kiểm tra user tồn tại
             User user = userRepository.findById(userId).orElse(null);
             if (user == null) {
@@ -97,13 +106,12 @@ public class DeviceController {
             history.setPerformedAt(LocalDateTime.now());
             historyRepository.save(history);
 
+            device.setCurrentStatus("PENDING");
+            deviceRepository.save(device);
+
             // Gửi lệnh MQTT
-            Map<String, String> payload = Map.of(
-                "deviceId", deviceId, 
-                "action", action.toUpperCase(),
-                "timestamp", LocalDateTime.now().toString()
-            );
-            mqttGateway.publish("device/control", objectMapper.writeValueAsString(payload));
+            String command = firmwareDeviceId + "_" + action.toUpperCase();
+            mqttGateway.publish(controlTopic, command);
 
             // Trả về response
             response.put("success", true);
@@ -139,6 +147,8 @@ public class DeviceController {
     public ResponseEntity<Map<String, Object>> getHistory(
             @RequestParam(required = false) String deviceId,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) String range,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int limit) {
@@ -164,12 +174,16 @@ public class DeviceController {
             Pageable pageable = PageRequest.of(page, limit, Sort.by("performedAt").descending());
             
             // Truy vấn lịch sử
-            Page<History> result;
-            if (keyword != null && !keyword.isEmpty()) {
-                result = historyRepository.search(deviceId, keyword, from, pageable);
-            } else {
-                result = historyRepository.search(deviceId, from, pageable);
-            }
+            String normalizedAction = switch (action == null ? "" : action.toLowerCase()) {
+                case "on" -> "B\u1eadt";
+                case "off" -> "T\u1eaft";
+                default -> null;
+            };
+            String normalizedStatus = status == null || status.isBlank() ? null : status;
+            String normalizedKeyword = keyword == null || keyword.isBlank() ? null : keyword.trim();
+
+            Page<History> result = historyRepository.search(
+                    deviceId, normalizedKeyword, normalizedAction, normalizedStatus, from, pageable);
 
             // Tạo response
             Map<String, Object> response = new HashMap<>();
@@ -187,5 +201,35 @@ public class DeviceController {
             errorResponse.put("message", "Có lỗi xảy ra khi lấy lịch sử: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
+    }
+
+    // Bổ sung method này vào bên trong class DeviceController
+
+    // Bổ sung hoặc sửa lại method này trong DeviceController.java
+
+
+    private String resolveFirmwareDeviceId(String deviceId) {
+        if (deviceId == null) {
+            return null;
+        }
+
+        return switch (deviceId.trim().toUpperCase()) {
+            case "1", "RED" -> "RED";
+            case "2", "GREEN" -> "GREEN";
+            case "3", "YELLOW" -> "YELLOW";
+            default -> null;
+        };
+    }
+
+    @PostMapping("/control")
+    public ResponseEntity<String> controlDevice(@RequestParam String device, @RequestParam String action) {
+        // device: "RED", "GREEN", "YELLOW"
+        // action: "ON", "OFF"
+        
+        String command = device.toUpperCase() + "_" + action.toUpperCase();
+        // Tạo ra lệnh đúng như code Arduino chờ: RED_ON, RED_OFF, GREEN_ON, GREEN_OFF, YELLOW_ON, YELLOW_OFF
+        
+        mqttGateway.publish(controlTopic, command);
+        return ResponseEntity.ok("Đã gửi lệnh tới ESP8266: " + command);
     }
 }
