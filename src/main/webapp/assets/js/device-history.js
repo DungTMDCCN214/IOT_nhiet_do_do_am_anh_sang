@@ -4,7 +4,7 @@ let state = {
   deviceId: "",
   action: "",
   status: "",
-  keyword: "",
+  time: "", // giá trị thời gian (YYYY-MM-DD HH:mm)
   range: "",
 };
 
@@ -35,9 +35,12 @@ function loadStatusSummary() {
   fetch("/api/sensors/status-summary")
     .then((res) => res.json())
     .then((data) => {
-      document.getElementById("statusBadge").innerHTML =
-        `<span class="status-dot"></span> Hoạt động: ${data.active}/${data.total}`;
-    });
+      const el = document.getElementById("statusBadge");
+      if (el) {
+        el.innerHTML = `<span class="status-dot"></span> Hoạt động: ${data.active}/${data.total}`;
+      }
+    })
+    .catch(() => {});
 }
 
 function loadDeviceOptions() {
@@ -45,6 +48,7 @@ function loadDeviceOptions() {
     .then((res) => res.json())
     .then((devices) => {
       const select = document.getElementById("deviceFilter");
+      if (!select) return;
       const selectedDeviceId = select.value;
       select.innerHTML = '<option value="">Tất cả</option>';
       devices.forEach((d) => {
@@ -54,7 +58,8 @@ function loadDeviceOptions() {
         select.appendChild(opt);
       });
       select.value = selectedDeviceId;
-    });
+    })
+    .catch(() => {});
 }
 
 function loadTable() {
@@ -62,7 +67,7 @@ function loadTable() {
   if (state.deviceId) params.set("deviceId", state.deviceId);
   if (state.action) params.set("action", state.action);
   if (state.status) params.set("status", state.status);
-  if (state.keyword) params.set("keyword", state.keyword);
+  if (state.time) params.set("time", state.time);
   if (state.range) params.set("range", state.range);
 
   fetch(`/api/devices/history?${params.toString()}`)
@@ -71,29 +76,40 @@ function loadTable() {
         window.location.href = "/login";
         throw new Error("unauth");
       }
+      if (!res.ok) {
+        throw new Error(`request failed: ${res.status}`);
+      }
       return res.json();
     })
     .then((result) => {
       renderTable(result.data);
       renderFooter(result.total, result.page);
     })
-    .catch(() => {});
+    .catch((err) => {
+      console.error("loadTable error:", err);
+      const tbody = document.getElementById("historyTableBody");
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--danger); padding:24px;">Không tải được lịch sử thiết bị. Vui lòng kiểm tra Backend.</td></tr>`;
+      }
+    });
 }
 
 function renderTable(rows) {
   const tbody = document.getElementById("historyTableBody");
-  tbody.innerHTML = "";
+  if (!tbody) return;
 
   if (!rows || rows.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-secondary); padding:24px;">Không có dữ liệu lịch sử</td></tr>`;
     return;
   }
 
+  // Build string 1 lần thay vì innerHTML += trong vòng lặp
+  let html = "";
   rows.forEach((row, idx) => {
     const meta = deviceIcon(row.device.deviceName);
     const stt = state.page * state.limit + idx + 1;
 
-    tbody.innerHTML += `
+    html += `
       <tr>
         <td>${stt}</td>
         <td class="mono-code"># ${row.device.deviceId}</td>
@@ -104,6 +120,7 @@ function renderTable(rows) {
         <td>${statusBadge(row.status)}</td>
       </tr>`;
   });
+  tbody.innerHTML = html;
 }
 
 function renderFooter(total, page) {
@@ -112,10 +129,13 @@ function renderFooter(total, page) {
   const from = total === 0 ? 0 : page * limit + 1;
   const to = Math.min(total, (page + 1) * limit);
 
-  document.getElementById("resultInfo").textContent =
-    `Hiển thị ${from}-${to} của ${total} bản ghi`;
+  const infoEl = document.getElementById("resultInfo");
+  if (infoEl) {
+    infoEl.textContent = `Hiển thị ${from}-${to} của ${total} bản ghi`;
+  }
 
   const pag = document.getElementById("pagination");
+  if (!pag) return;
   pag.innerHTML = "";
 
   const addBtn = (label, targetPage, disabled, active) => {
@@ -145,22 +165,34 @@ function renderFooter(total, page) {
 }
 
 function applyFiltersAndSearch() {
-  state.keyword = document.getElementById("searchInput").value.trim();
-  state.deviceId = document.getElementById("deviceFilter").value;
-  state.action = document.getElementById("actionFilter").value;
-  state.status = document.getElementById("statusFilter").value;
-  state.limit = parseInt(document.getElementById("limitFilter").value, 10);
+  // ĐÃ BỎ: đọc #searchInput (vì JSP không còn ô này)
+  state.deviceId = document.getElementById("deviceFilter")?.value || "";
+  state.action = document.getElementById("actionFilter")?.value || "";
+  state.status = document.getElementById("statusFilter")?.value || "";
+  state.limit = parseInt(
+    document.getElementById("limitFilter")?.value || "10",
+    10,
+  );
+  state.time = (document.getElementById("timeFilter")?.value || "").trim();
   state.page = 0;
   loadTable();
 }
 
+// Nút Tìm kiếm
 document
   .getElementById("searchBtn")
-  .addEventListener("click", applyFiltersAndSearch);
+  ?.addEventListener("click", applyFiltersAndSearch);
 
-// Enter trong ô tìm kiếm cũng kích hoạt tìm kiếm
+// Enter trong ô thời gian cũng kích hoạt tìm kiếm
+document.getElementById("timeFilter")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    applyFiltersAndSearch();
+  }
+});
 
-document.getElementById("refreshBtn").addEventListener("click", () => {
+// Nút Làm mới
+document.getElementById("refreshBtn")?.addEventListener("click", () => {
   const button = document.getElementById("refreshBtn");
   button.disabled = true;
   button.classList.add("is-loading");
@@ -171,14 +203,25 @@ document.getElementById("refreshBtn").addEventListener("click", () => {
     deviceId: "",
     action: "",
     status: "",
-    keyword: "",
+    time: "",
     range: "",
   };
-  document.getElementById("searchInput").value = "";
-  document.getElementById("deviceFilter").value = "";
-  document.getElementById("actionFilter").value = "";
-  document.getElementById("statusFilter").value = "";
-  document.getElementById("limitFilter").value = "10";
+
+  // Reset các ô filter (đã bỏ #searchInput)
+  const deviceFilter = document.getElementById("deviceFilter");
+  if (deviceFilter) deviceFilter.value = "";
+  const actionFilter = document.getElementById("actionFilter");
+  if (actionFilter) actionFilter.value = "";
+  const statusFilter = document.getElementById("statusFilter");
+  if (statusFilter) statusFilter.value = "";
+  const limitFilter = document.getElementById("limitFilter");
+  if (limitFilter) limitFilter.value = "10";
+  const timeFilter = document.getElementById("timeFilter");
+  if (timeFilter) timeFilter.value = "";
+  const timePicker = document.getElementById("timeFilterPicker");
+  if (timePicker) timePicker.value = "";
+
+  // Bỏ active các nút range nếu có
   document
     .querySelectorAll("#rangeButtons button")
     .forEach((rangeButton) => rangeButton.classList.remove("active"));
@@ -191,6 +234,7 @@ document.getElementById("refreshBtn").addEventListener("click", () => {
   }, 500);
 });
 
+// Range buttons (nếu có trong DOM — hiện tại JSP không có, guard để an toàn)
 document.querySelectorAll("#rangeButtons button").forEach((btn) => {
   btn.addEventListener("click", () => {
     document
@@ -201,6 +245,7 @@ document.querySelectorAll("#rangeButtons button").forEach((btn) => {
   });
 });
 
+// Khởi động
 loadStatusSummary();
 loadDeviceOptions();
 loadTable();

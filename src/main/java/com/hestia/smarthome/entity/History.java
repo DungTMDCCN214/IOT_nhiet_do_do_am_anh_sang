@@ -27,6 +27,9 @@ public class History {
 
     private String status; // "Pending" | "Success" | "Error"
 
+    @Column(name = "previous_status")
+    private String previousStatus;
+
     @Column(name = "performed_at")
     private LocalDateTime performedAt;
 }

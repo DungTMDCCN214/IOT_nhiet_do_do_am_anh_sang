@@ -21,11 +21,13 @@ public interface DataSensorRepository extends JpaRepository<DataSensor, Long> {
     // Tra cứu lịch sử dữ liệu cảm biến có lọc theo loại/từ khóa/khoảng thời gian -> UC03
     @Query("SELECT d FROM DataSensor d WHERE " +
            "(:type IS NULL OR d.sensor.sensorType = :type) AND " +
-           "(:keyword IS NULL OR d.sensor.sensorCode LIKE CONCAT('%', :keyword, '%')) AND " +
-           "(:from IS NULL OR d.recordedAt >= :from)")
+           "(:value IS NULL OR d.value = :value) AND " +
+           "(:from IS NULL OR d.recordedAt >= :from) AND " +
+           "(:to IS NULL OR d.recordedAt < :to)")
     Page<DataSensor> search(@Param("type") String type,
-                             @Param("keyword") String keyword,
+                             @Param("value") Double value,
                              @Param("from") LocalDateTime from,
+                             @Param("to") LocalDateTime to,
                              Pageable pageable);
 
     // Dữ liệu tổng hợp cho biểu đồ 12 giờ gần nhất -> UC05

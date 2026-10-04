@@ -28,7 +28,14 @@
   <div class="sidebar-footer">
     <div class="user-info">
       <c:set var="displayName" value="${empty sessionScope.fullName ? 'Khach' : sessionScope.fullName}" />
-      <div class="user-avatar">${displayName.substring(0,1)}</div>
+      <div class="user-avatar" id="sidebarAvatar">
+        <c:choose>
+          <c:when test="${not empty sessionScope.avatarUrl}">
+            <img src="<c:out value='${sessionScope.avatarUrl}'/>" alt="Ảnh đại diện">
+          </c:when>
+          <c:otherwise>${displayName.substring(0,1)}</c:otherwise>
+        </c:choose>
+      </div>
       <div>${displayName}</div>
     </div>
     <button class="logout-btn" id="logoutBtn"><i class="ti ti-logout"></i> Đăng xuất</button>

@@ -19,6 +19,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +105,7 @@ public class DeviceController {
             history.setUser(user);
             history.setAction(action.equalsIgnoreCase("ON") ? "Bật" : "Tắt");
             history.setStatus("Pending");
+            history.setPreviousStatus(device.getCurrentStatus());
             history.setPerformedAt(LocalDateTime.now());
             historyRepository.save(history);
 
@@ -149,6 +152,7 @@ public class DeviceController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String action,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String time,
             @RequestParam(required = false) String range,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int limit) {
@@ -174,6 +178,17 @@ public class DeviceController {
             Pageable pageable = PageRequest.of(page, limit, Sort.by("performedAt").descending());
             
             // Truy vấn lịch sử
+            LocalDateTime to = null;
+            if (time != null && !time.isBlank()) {
+                try {
+                    LocalDateTime selectedTime = parseSelectedTime(time);
+                    from = selectedTime;
+                    to = resolveSelectedTimeEnd(time, selectedTime);
+                } catch (DateTimeParseException e) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "Invalid time format"));
+                }
+            }
+
             String normalizedAction = switch (action == null ? "" : action.toLowerCase()) {
                 case "on" -> "B\u1eadt";
                 case "off" -> "T\u1eaft";
@@ -183,7 +198,7 @@ public class DeviceController {
             String normalizedKeyword = keyword == null || keyword.isBlank() ? null : keyword.trim();
 
             Page<History> result = historyRepository.search(
-                    deviceId, normalizedKeyword, normalizedAction, normalizedStatus, from, pageable);
+                    deviceId, normalizedKeyword, normalizedAction, normalizedStatus, from, to, pageable);
 
             // Tạo response
             Map<String, Object> response = new HashMap<>();
@@ -205,7 +220,6 @@ public class DeviceController {
 
     // Bổ sung method này vào bên trong class DeviceController
 
-    // Bổ sung hoặc sửa lại method này trong DeviceController.java
 
 
     private String resolveFirmwareDeviceId(String deviceId) {
@@ -219,6 +233,47 @@ public class DeviceController {
             case "3", "YELLOW" -> "YELLOW";
             default -> null;
         };
+    }
+
+    private LocalDateTime parseSelectedTime(String value) {
+        String normalized = value.trim();
+        if (normalized.matches("\\d{4}")) {
+            return LocalDateTime.parse(normalized + "-01-01 00:00", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        }
+        if (normalized.matches("\\d{2}/\\d{4}")) {
+            return LocalDateTime.parse("01/" + normalized + " 00:00", DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+        }
+        if (isDateOnly(normalized)) {
+            DateTimeFormatter dateFormat = normalized.contains("/")
+                    ? DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+                    : DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            return LocalDateTime.parse(normalized + " 00:00", dateFormat);
+        }
+        if (normalized.matches("\\d{2}/\\d{2}/\\d{4} \\d{2}")) {
+            return LocalDateTime.parse(normalized + ":00", DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+        }
+        try {
+            return LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+        } catch (DateTimeParseException ignored) {
+            try {
+                return LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+            } catch (DateTimeParseException ignoredAgain) {
+                return LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
+            }
+        }
+    }
+
+    private boolean isDateOnly(String value) {
+        return value.trim().matches("\\d{2}/\\d{2}/\\d{4}|\\d{4}-\\d{2}-\\d{2}");
+    }
+
+    private LocalDateTime resolveSelectedTimeEnd(String value, LocalDateTime from) {
+        String normalized = value.trim();
+        if (normalized.matches("\\d{4}")) return from.plusYears(1);
+        if (normalized.matches("\\d{2}/\\d{4}")) return from.plusMonths(1);
+        if (isDateOnly(normalized)) return from.plusDays(1);
+        if (normalized.matches("\\d{2}/\\d{2}/\\d{4} \\d{2}")) return from.plusHours(1);
+        return from.plusMinutes(1);
     }
 
     @PostMapping("/control")

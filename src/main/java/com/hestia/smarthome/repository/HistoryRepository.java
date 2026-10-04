@@ -25,11 +25,13 @@ public interface HistoryRepository extends JpaRepository<History, Long> {
         "  OR h.device.deviceName LIKE CONCAT('%', :keyword, '%')) AND " +
         "(:action IS NULL OR h.action = :action) AND " +
         "(:status IS NULL OR h.status = :status) AND " +
-        "(:from IS NULL OR h.performedAt >= :from)")
+        "(:from IS NULL OR h.performedAt >= :from) AND " +
+        "(:to IS NULL OR h.performedAt < :to)")
     Page<History> search(@Param("deviceId") String deviceId,
                         @Param("keyword") String keyword,
                         @Param("action") String action,
                         @Param("status") String status,
                         @Param("from") LocalDateTime from,
+                        @Param("to") LocalDateTime to,
                         Pageable pageable);
 }

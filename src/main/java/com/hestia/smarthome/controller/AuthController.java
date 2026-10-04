@@ -34,6 +34,7 @@ public class AuthController {
         session.setAttribute("userId", user.getUserId());
         session.setAttribute("username", user.getUsername());
         session.setAttribute("fullName", user.getFullName());
+        session.setAttribute("avatarUrl", user.getAvatarUrl());
 
         return ResponseEntity.ok(Map.of("success", true, "user", user));
     }

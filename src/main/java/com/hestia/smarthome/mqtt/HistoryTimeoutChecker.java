@@ -1,32 +1,34 @@
 package com.hestia.smarthome.mqtt;
 
+import com.hestia.smarthome.entity.Device;
 import com.hestia.smarthome.entity.History;
+import com.hestia.smarthome.repository.DeviceRepository;
 import com.hestia.smarthome.repository.HistoryRepository;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Theo luồng UC02 đã mô tả: nếu Backend không nhận được phản hồi từ thiết bị (topic
- * "device/status") trong vòng 20 giây kể từ lúc gửi lệnh, bản ghi History tương ứng
- * phải được chuyển từ "Pending" sang "Error".
- *
- * Tác vụ này chạy định kỳ mỗi 5 giây để rà soát các bản ghi Pending đã quá 20 giây.
- */
 @Component
 public class HistoryTimeoutChecker {
 
-    private static final long TIMEOUT_SECONDS = 20;
+    private static final long TIMEOUT_SECONDS = 15;
 
     private final HistoryRepository historyRepository;
+    private final DeviceRepository deviceRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public HistoryTimeoutChecker(HistoryRepository historyRepository) {
+    public HistoryTimeoutChecker(HistoryRepository historyRepository,
+                                 DeviceRepository deviceRepository,
+                                 SimpMessagingTemplate messagingTemplate) {
         this.historyRepository = historyRepository;
+        this.deviceRepository = deviceRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
-    @Scheduled(fixedDelay = 5000)
+    @Scheduled(fixedDelay = 1000)
     public void checkTimeouts() {
         LocalDateTime threshold = LocalDateTime.now().minusSeconds(TIMEOUT_SECONDS);
         List<History> overdue = historyRepository.findByStatusAndPerformedAtBefore("Pending", threshold);
@@ -34,8 +36,23 @@ public class HistoryTimeoutChecker {
         for (History history : overdue) {
             history.setStatus("Error");
             historyRepository.save(history);
-            System.out.println("Lệnh điều khiển thiết bị " + history.getDevice().getDeviceId()
-                    + " đã timeout sau " + TIMEOUT_SECONDS + "s -> đánh dấu Error.");
+
+            Device device = history.getDevice();
+            device.setCurrentStatus(resolvePreviousStatus(history));
+            Device savedDevice = deviceRepository.save(device);
+            messagingTemplate.convertAndSend("/topic/devices", savedDevice);
+
+            System.out.println("Device command timed out after " + TIMEOUT_SECONDS
+                    + " seconds: " + device.getDeviceId());
         }
+    }
+
+    private String resolvePreviousStatus(History history) {
+        String previousStatus = history.getPreviousStatus();
+        if ("ON".equalsIgnoreCase(previousStatus) || "OFF".equalsIgnoreCase(previousStatus)) {
+            return previousStatus.toUpperCase();
+        }
+
+        return "Bật".equalsIgnoreCase(history.getAction()) ? "OFF" : "ON";
     }
 }

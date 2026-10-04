@@ -5,7 +5,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Tài khoản - Hestia SmartHome</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
@@ -64,14 +64,19 @@
       <!-- Tài liệu hệ thống -->
       <div class="card">
         <div class="section-title">Tài liệu hệ thống</div>
-        <div class="doc-desc">
-          Tài liệu hướng dẫn lắp đặt cảm biến, hiệu chuẩn thông số, lập trình kết nối API
-          và tối ưu hóa hệ thống vận hành thông minh IoT Monitor.
-        </div>
-        <div class="btn-row">
-          <button class="btn-outline primary"><i class="ti ti-file-text"></i> Xem tài liệu</button>
-          <button class="btn-outline">Tải PDF bản cứng</button>
-        </div>
+
+          <div class="doc-desc">
+              Tài liệu hướng dẫn lắp đặt cảm biến, hiệu chuẩn thông số, lập trình kết nối API
+              và tối ưu hóa hệ thống vận hành thông minh IoT Monitor.
+          </div>
+
+          <div class="btn-row">
+              <a href="https://docs.google.com/document/d/1THBQMkUUF6PjVhn8-tVG1ZETBG9zhjkRcySMHjAnrTY/edit?usp=sharing"
+                target="_blank"
+                class="btn-outline primary">
+                  <i class="ti ti-file-text"></i> Xem tài liệu
+              </a>
+          </div>
       </div>
     </div>
 
@@ -85,12 +90,12 @@
             <div class="integration-title">
               <i class="ti ti-key" style="color:var(--primary);"></i> API Access
             </div>
-            <div class="integration-sub">Khóa truy cập API</div>
+            <div class="integration-sub">Link kểt nối Postman</div>
           </div>
           <span class="badge-success" id="apiKeyStatus">--</span>
         </div>
         <div class="integration-value" id="apiKeyValue">--</div>
-        <button class="btn-outline btn-full" id="regenApiKeyBtn">Tạo lại khóa</button>
+        <button class="btn-outline btn-full">Quản lý</button>
       </div>
 
       <!-- GitHub -->

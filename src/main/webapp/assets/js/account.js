@@ -1,8 +1,3 @@
-function maskApiKey(key) {
-  if (!key || key.length < 8) return key || "--";
-  return key.slice(0, 6) + "..." + key.slice(-4);
-}
-
 function setIntegrationCard(prefix, value, connectedLabel) {
   const statusEl = document.getElementById(`${prefix}Status`);
   const valueEl = document.getElementById(`${prefix}Value`);
@@ -18,6 +13,24 @@ function setIntegrationCard(prefix, value, connectedLabel) {
   }
 }
 
+function renderAvatar(element, avatarUrl, fullName) {
+  const fallback = (fullName || "?").trim().charAt(0).toUpperCase() || "?";
+  if (!avatarUrl) {
+    element.textContent = fallback;
+    return;
+  }
+
+  const image = new Image();
+  image.alt = "Ảnh đại diện";
+  image.onload = () => {
+    element.replaceChildren(image);
+  };
+  image.onerror = () => {
+    element.textContent = fallback;
+  };
+  image.src = avatarUrl;
+}
+
 function loadProfile() {
   fetch("/api/users/me")
     .then((res) => {
@@ -28,9 +41,14 @@ function loadProfile() {
       return res.json();
     })
     .then((user) => {
-      document.getElementById("profileAvatar").textContent = (
-        user.fullName || "?"
-      ).charAt(0);
+      renderAvatar(
+        document.getElementById("profileAvatar"),
+        user.avatarUrl,
+        user.fullName,
+      );
+      const sidebarAvatar = document.getElementById("sidebarAvatar");
+      if (sidebarAvatar)
+        renderAvatar(sidebarAvatar, user.avatarUrl, user.fullName);
       document.getElementById("profileName").textContent =
         user.fullName || "--";
       document.getElementById("profileStudentCode").textContent =
@@ -41,21 +59,11 @@ function loadProfile() {
       document.getElementById("profileSchool").textContent =
         user.school || "--";
 
-      setIntegrationCard("apiKey", maskApiKey(user.apiKey), "Hoạt động");
+      setIntegrationCard("apiKey", user.apiKey, "Đã kết nối");
       setIntegrationCard("github", user.github, "Đã kết nối");
       setIntegrationCard("figma", user.figma, "Đã kết nối");
     })
     .catch(() => {});
 }
-
-document.getElementById("regenApiKeyBtn").addEventListener("click", () => {
-  if (!confirm("Tạo lại khóa API sẽ vô hiệu hóa khóa cũ. Tiếp tục?")) return;
-
-  fetch("/api/users/me/regenerate-api-key", { method: "POST" })
-    .then((res) => res.json())
-    .then((user) => {
-      setIntegrationCard("apiKey", maskApiKey(user.apiKey), "Hoạt động");
-    });
-});
 
 loadProfile();
