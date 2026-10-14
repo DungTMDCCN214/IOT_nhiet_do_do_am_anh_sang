@@ -281,7 +281,7 @@ tr:hover td {
   transition: 0.2s;
 }
 .toggle-switch input:checked + .toggle-track {
-  background: var(--primary);
+  background: #2563eb;
 }
 .toggle-switch input:checked + .toggle-track::before {
   transform: translateX(18px);

@@ -41,7 +41,7 @@
       overflow: hidden;
     }
 
-    /* ===== FILTER BAR: 1 HÀNG NGANG, CÁC Ô TỰ CO GIÃN ===== */
+    /* ===== FILTER BAR: 1 HÀNG NGANG ===== */
     .filter-bar {
       flex-shrink: 0;
       display: flex;
@@ -61,7 +61,6 @@
       flex: 1 1 0;
       min-width: 0;
     }
-    /* Ô "Thiết bị" rộng hơn một chút vì hiển thị tên dài */
     .filter-group.device-group {
       flex: 1.6 1 0;
     }
@@ -76,7 +75,8 @@
 
     /* ===== STYLE CHUNG CHO INPUT / SELECT ===== */
     .filter-group input[type="text"],
-    .filter-group select {
+    .filter-group select,
+    .page-size-selector select {
       width: 100%;
       min-width: 0;
       height: 34px;
@@ -91,17 +91,18 @@
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .filter-group input[type="text"]:focus,
-    .filter-group select:focus {
+    .filter-group select:focus,
+    .page-size-selector select:focus {
       border-color: var(--primary, #2563eb);
       box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
     }
 
-    /* SELECT: bỏ style mặc định, thêm mũi tên custom */
-    .filter-group select {
+    .filter-group select,
+    .page-size-selector select {
       appearance: none;
       -webkit-appearance: none;
       -moz-appearance: none;
-      padding-right: 28px;
+      padding-right: 24px;
       background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
       background-repeat: no-repeat;
       background-position: right 8px center;
@@ -109,7 +110,6 @@
       cursor: pointer;
     }
 
-    /* Ô thời gian: bo viền giống các ô khác */
     .datetime-input-wrap {
       position: relative;
       display: flex;
@@ -174,7 +174,6 @@
     .time-part-grid select { height:32px; min-width:0; }
     .time-picker-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
 
-    /* Nút Tìm + Làm mới */
     .filter-bar .search-btn {
       flex: 0 0 auto;
       height: 34px;
@@ -245,15 +244,33 @@
       font-size: 13px;
     }
 
-    /* ===== FOOTER CỐ ĐỊNH ===== */
+    /* ===== FOOTER DƯỚI CHÂN TRANG ===== */
     .table-footer {
       flex-shrink: 0;
-      padding-top: 12px;
+      padding-top: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
       flex-wrap: wrap;
+    }
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .page-size-selector {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-secondary, #6b7280);
+    }
+    .page-size-selector select {
+      width: auto;
+      height: 30px;
+      padding: 0 24px 0 8px;
+      font-size: 12px;
     }
     .pagination {
       display: flex;
@@ -322,7 +339,7 @@
     </div>
 
     <div class="card">
-      <!-- ================= FILTER BAR: 1 HÀNG NGANG (ĐÃ BỎ TÌM KIẾM NHANH) ================= -->
+      <!-- ================= FILTER BAR ================= -->
       <div class="filter-bar">
         <div class="filter-group device-group">
           <label>Thiết bị</label>
@@ -351,15 +368,6 @@
         </div>
 
         <div class="filter-group">
-          <label>Số lượng</label>
-          <select class="filter-select" id="limitFilter">
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
           <label>Thời gian</label>
           <div class="datetime-input-wrap">
             <input type="text" id="timeFilter" placeholder="dd/MM/yyyy HH:mm">
@@ -372,7 +380,7 @@
 
         <button class="search-btn" id="searchBtn"><i class="ti ti-search"></i> Tìm</button>
         <button type="button" class="icon-btn" id="refreshBtn" title="Làm mới dữ liệu" aria-label="Làm mới dữ liệu">
-          <i class="ti ti-refresh"></i>
+          <i class="ti ti-refresh"></i> Đặt
         </button>
       </div>
 
@@ -393,12 +401,22 @@
           <tbody id="historyTableBody"></tbody>
         </table>
       </div>
+    </div>
 
-      <!-- ================= FOOTER (cố định) ================= -->
-      <div class="table-footer">
+    <!-- ================= FOOTER PHÂN TRANG (CỐ ĐỊNH CHÂN TRANG) ================= -->
+    <div class="table-footer">
+      <div class="footer-left">
         <div id="resultInfo">Hiển thị 0 bản ghi</div>
-        <div class="pagination" id="pagination"></div>
+        <div class="page-size-selector">
+          <span>Hiển thị:</span>
+          <select id="limitFilter">
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+        </div>
       </div>
+      <div class="pagination" id="pagination"></div>
     </div>
   </div>
 </div>

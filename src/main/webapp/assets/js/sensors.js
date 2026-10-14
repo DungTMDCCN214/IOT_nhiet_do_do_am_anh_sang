@@ -12,13 +12,15 @@ const SENSOR_META = {
 let state = {
   page: 0,
   limit: 10,
+  criteria: "all",
+  keyword: "",
   type: "",
   value: "",
   time: "",
-  range: "",
 };
 
 function formatDateTime(iso) {
+  if (!iso) return "--";
   const d = new Date(iso);
   const pad = (n) => String(n).padStart(2, "0");
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
@@ -36,19 +38,20 @@ function loadStatusSummary() {
     .catch(() => {});
 }
 
+// GỬI THAM SỐ LÊN BACKEND LỌC DỮ LIỆU
 function loadTable() {
   const params = new URLSearchParams({ page: state.page, limit: state.limit });
-  if (state.type) params.set("type", state.type);
 
-  // Gửi keyword = giá trị người dùng nhập vào ô "Giá trị"
-  // (backend cũ đọc keyword, nên filter vẫn hoạt động)
-  if (state.value) params.set("value", state.value);
-
-  if (state.range) params.set("range", state.range);
-
-  // KHÔNG gửi "time" lên API để tránh 400 nếu backend chưa hỗ trợ.
-  // Khi nào backend nhận "time", bỏ comment dòng dưới:
-  if (state.time) params.set("time", state.time);
+  // Nếu chọn "Tất cả" và có từ khóa -> Tìm tổng hợp qua keyword & value
+  if (state.criteria === "all" && state.keyword) {
+    params.set("keyword", state.keyword);
+    params.set("value", state.keyword);
+  } else {
+    // Nếu chọn tiêu chí cụ thể -> Gửi các tham số riêng tích lũy
+    if (state.type) params.set("type", state.type);
+    if (state.value) params.set("value", state.value);
+    if (state.time) params.set("time", state.time);
+  }
 
   fetch(`/api/sensors/history?${params.toString()}`)
     .then((res) => {
@@ -146,92 +149,233 @@ function renderFooter(total, page) {
   );
 }
 
+function handleCriteriaChange() {
+  const criteriaSelect = document.getElementById("criteriaSelect");
+  if (!criteriaSelect) return;
+  const criteria = criteriaSelect.value;
+  const container = document.getElementById("filterValueContainer");
+  state.criteria = criteria;
+
+  if (criteria === "all") {
+    container.innerHTML = `
+      <label>Từ khóa tìm kiếm</label>
+      <input type="text" id="valueInput" value="${state.keyword}" placeholder="Nhập từ khóa (Loại, giá trị, thời gian)..." disabled/>
+    `;
+    const input = document.getElementById("valueInput");
+    input.focus();
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        applyFiltersAndSearch();
+      }
+    });
+  } else if (
+    criteria === "temperature" ||
+    criteria === "humidity" ||
+    criteria === "light"
+  ) {
+    const meta = SENSOR_META[criteria];
+    container.innerHTML = `
+      <label>Nhập giá trị ${meta.label.toLowerCase()} (${meta.unit})</label>
+      <input type="number" step="0.1" id="valueInput" value="${state.type === criteria ? state.value : ""}" placeholder="Nhập giá trị ${meta.label.toLowerCase()} (ví dụ: 30.5)..." />
+    `;
+    const input = document.getElementById("valueInput");
+    input.focus();
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        applyFiltersAndSearch();
+      }
+    });
+  } else if (criteria === "type") {
+    container.innerHTML = `
+      <label>Chọn loại cảm biến</label>
+      <select id="typeSelect">
+        <option value="">Tất cả loại</option>
+        <option value="temperature" ${state.type === "temperature" ? "selected" : ""}>Nhiệt độ</option>
+        <option value="humidity" ${state.type === "humidity" ? "selected" : ""}>Độ ẩm</option>
+        <option value="light" ${state.type === "light" ? "selected" : ""}>Ánh sáng</option>
+      </select>
+    `;
+    document.getElementById("typeSelect").addEventListener("change", (e) => {
+      state.type = e.target.value;
+      state.page = 0;
+      loadTable();
+    });
+  } else if (criteria === "time") {
+    container.innerHTML = `
+      <label>Chọn mốc thời gian</label>
+      <div class="datetime-input-wrap">
+        <input type="text" id="timeFilter" value="${state.time}" placeholder="dd/MM/yyyy HH:mm">
+        <button type="button" class="calendar-icon-btn" id="calendarBtn" title="Chọn thời gian">
+          <i class="ti ti-calendar"></i>
+        </button>
+      </div>
+      <div class="time-picker-panel" id="timePickerPanel">
+        <div class="time-part-grid">
+          <select id="yearPart"><option value="">Năm</option></select>
+          <select id="monthPart"><option value="">Tháng</option></select>
+          <select id="dayPart"><option value="">Ngày</option></select>
+          <select id="hourPart"><option value="">Giờ</option></select>
+          <select id="minutePart"><option value="">Phút</option></select>
+        </div>
+        <div class="time-picker-actions">
+          <button type="button" class="search-btn" id="applyTimeBtn">Áp dụng</button>
+        </div>
+      </div>
+    `;
+    initTimePicker();
+  }
+}
+
+function initTimePicker() {
+  const calendarBtn = document.getElementById("calendarBtn");
+  const timeFilter = document.getElementById("timeFilter");
+  const panel = document.getElementById("timePickerPanel");
+  if (!calendarBtn || !panel) return;
+
+  const parts = [
+    "yearPart",
+    "monthPart",
+    "dayPart",
+    "hourPart",
+    "minutePart",
+  ].map((id) => document.getElementById(id));
+  const addOptions = (select, max, start = 1) => {
+    for (let i = start; i <= max; i++)
+      select.add(new Option(String(i).padStart(2, "0"), i));
+  };
+
+  const now = new Date();
+  for (let year = now.getFullYear() + 1; year >= 2020; year--)
+    parts[0].add(new Option(year, year));
+  addOptions(parts[1], 12);
+  addOptions(parts[2], 31);
+  addOptions(parts[3], 23, 0);
+  addOptions(parts[4], 59, 0);
+
+  calendarBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    panel.classList.toggle("open");
+  });
+
+  document.getElementById("applyTimeBtn")?.addEventListener("click", () => {
+    const [year, month, day, hour, minute] = parts.map((part) => part.value);
+    if (!year) {
+      timeFilter.value = "";
+    } else if (!month) {
+      timeFilter.value = year;
+    } else if (!day) {
+      timeFilter.value = String(month).padStart(2, "0") + "/" + year;
+    } else if (!hour) {
+      timeFilter.value =
+        String(day).padStart(2, "0") +
+        "/" +
+        String(month).padStart(2, "0") +
+        "/" +
+        year;
+    } else if (!minute) {
+      timeFilter.value =
+        String(day).padStart(2, "0") +
+        "/" +
+        String(month).padStart(2, "0") +
+        "/" +
+        year +
+        " " +
+        String(hour).padStart(2, "0");
+    } else {
+      timeFilter.value =
+        String(day).padStart(2, "0") +
+        "/" +
+        String(month).padStart(2, "0") +
+        "/" +
+        year +
+        " " +
+        String(hour).padStart(2, "0") +
+        ":" +
+        String(minute).padStart(2, "0");
+    }
+    panel.classList.remove("open");
+    state.time = timeFilter.value.trim();
+    state.page = 0;
+    loadTable();
+  });
+}
+
 function applyFiltersAndSearch() {
-  state.type = document.getElementById("typeFilter")?.value || "";
-  state.value = (document.getElementById("valueFilter")?.value || "").trim();
-  state.limit = parseInt(
-    document.getElementById("limitFilter")?.value || "10",
-    10,
-  );
-  state.time = (document.getElementById("timeFilter")?.value || "").trim();
+  const criteria = state.criteria;
+
+  if (criteria === "all") {
+    state.keyword = (document.getElementById("valueInput")?.value || "").trim();
+    state.type = "";
+    state.value = "";
+  } else if (
+    criteria === "temperature" ||
+    criteria === "humidity" ||
+    criteria === "light"
+  ) {
+    state.type = criteria;
+    state.value = (document.getElementById("valueInput")?.value || "").trim();
+  } else if (criteria === "type") {
+    state.type = document.getElementById("typeSelect")?.value || "";
+    state.value = "";
+  } else if (criteria === "time") {
+    state.time = (document.getElementById("timeFilter")?.value || "").trim();
+  }
+
   state.page = 0;
   loadTable();
 }
 
-// Nút Tìm
+// BẮT SỰ KIỆN GIAO DIỆN
+document
+  .getElementById("criteriaSelect")
+  ?.addEventListener("change", handleCriteriaChange);
+
 document
   .getElementById("searchBtn")
   ?.addEventListener("click", applyFiltersAndSearch);
 
-// Enter trong ô Giá trị
-document.getElementById("valueFilter")?.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    applyFiltersAndSearch();
-  }
-});
-
-// Enter trong ô Thời gian
-document.getElementById("timeFilter")?.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    applyFiltersAndSearch();
-  }
-});
-
-// Đổi Loại cảm biến thì load ngay
-document.getElementById("typeFilter")?.addEventListener("change", (e) => {
-  state.type = e.target.value;
-  state.page = 0;
-  loadTable();
-});
-
-// Đổi Số bản ghi thì load ngay
 document.getElementById("limitFilter")?.addEventListener("change", (e) => {
   state.limit = parseInt(e.target.value, 10);
   state.page = 0;
   loadTable();
 });
 
-// Nút Làm mới
+// NÚT LÀM MỚI (RESET BỘ LỌC)
 document.getElementById("refreshBtn")?.addEventListener("click", () => {
   const button = document.getElementById("refreshBtn");
-  button.disabled = true;
-  button.classList.add("is-loading");
+  if (button) {
+    button.disabled = true;
+    button.classList.add("is-loading"); // Bật hiệu ứng xoay icon
+  }
 
-  state = { page: 0, limit: 10, type: "", value: "", time: "", range: "" };
+  state = {
+    page: 0,
+    limit: parseInt(document.getElementById("limitFilter")?.value || "10", 10),
+    criteria: "all",
+    keyword: "",
+    type: "",
+    value: "",
+    time: "",
+  };
 
-  const typeFilter = document.getElementById("typeFilter");
-  if (typeFilter) typeFilter.value = "";
-  const valueFilter = document.getElementById("valueFilter");
-  if (valueFilter) valueFilter.value = "";
-  const limitFilter = document.getElementById("limitFilter");
-  if (limitFilter) limitFilter.value = "10";
-  const timeFilter = document.getElementById("timeFilter");
-  if (timeFilter) timeFilter.value = "";
-  const timePicker = document.getElementById("timeFilterPicker");
-  if (timePicker) timePicker.value = "";
+  const criteriaSelect = document.getElementById("criteriaSelect");
+  if (criteriaSelect) criteriaSelect.value = "all";
+  handleCriteriaChange();
 
   loadTable();
   loadStatusSummary();
+
   window.setTimeout(() => {
-    button.disabled = false;
-    button.classList.remove("is-loading");
-  }, 500);
+    if (button) {
+      button.disabled = false;
+      button.classList.remove("is-loading");
+    }
+  }, 400);
 });
 
-// Range buttons (guard an toàn, JSP hiện không có)
-document.querySelectorAll("#rangeButtons button").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    document
-      .querySelectorAll("#rangeButtons button")
-      .forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-    state.range = btn.dataset.range;
-    state.page = 0;
-    loadTable();
-  });
-});
-
+// KHỞI TẠO TỰ ĐỘNG KHI LOAD TRANG
+handleCriteriaChange();
 loadStatusSummary();
 loadTable();

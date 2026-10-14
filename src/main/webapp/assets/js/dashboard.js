@@ -21,6 +21,7 @@ const OPTIMAL_RANGES = {
 };
 
 let chartInstance = null;
+let yAxisChartInstance = null;
 let realtimeRefreshTimer = null;
 
 // ================== RENDER 3 THẺ CẢM BIẾN ==================
@@ -56,16 +57,76 @@ function renderSensorCards(data) {
   });
 }
 
-// ================== RENDER BIỂU ĐỒ ==================
+// ================== RENDER BIỂU ĐỒ (TRỤC Y CỐ ĐỊNH CHUẨN ĐỘI CHIA + TRƯỢT NGANG TRỤC X) ==================
 function renderChart(data) {
   const byType = { temperature: [], humidity: [], light: [] };
+  let maxYValue = 200; // Giá trị tối đa mặc định của trục Y
+
   data.forEach((d) => {
     const type = d.sensor && d.sensor.sensorType;
     if (byType[type]) {
       byType[type].push({ x: d.recordedAt, y: d.value });
+      if (d.value > maxYValue) {
+        maxYValue = Math.ceil(d.value / 50) * 50; // Làm tròn theo bội số 50
+      }
     }
   });
 
+  // 1. TÍNH TOÁN CHIỀU RỘNG BẢNG TRƯỢT NGANG
+  const maxPoints = Math.max(
+    byType.temperature.length,
+    byType.humidity.length,
+    byType.light.length,
+  );
+
+  const scrollContainer = document.getElementById("chartScrollContainer");
+  const scrollWrapper = document.getElementById("chartScrollWrapper");
+
+  if (scrollContainer && scrollWrapper) {
+    const containerWidth = scrollContainer.clientWidth;
+    const pixelsPerPoint = 35; // Khoảng cách cố định 35px cho mỗi mốc điểm dữ liệu
+    const calculatedWidth = maxPoints * pixelsPerPoint;
+    const newWidth = Math.max(containerWidth, calculatedWidth);
+    scrollWrapper.style.width = `${newWidth}px`;
+  }
+
+  // 2. VẼ TRỤC Y CỐ ĐỊNH BÊN TRÁI
+  const yCtx = document.getElementById("yAxisChart");
+  if (yCtx) {
+    if (yAxisChartInstance) yAxisChartInstance.destroy();
+    yAxisChartInstance = new Chart(yCtx, {
+      type: "line",
+      data: { datasets: [] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: {
+            bottom: 28,
+            top: 32,
+            right: 6,
+          },
+        },
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          x: { display: false },
+          y: {
+            min: 0,
+            max: maxYValue,
+            ticks: {
+              font: { size: 10 },
+              color: "#6b7280",
+              stepSize: 50, // Chia đều nấc 50 đơn vị (0, 50, 100, 150, 200)
+              precision: 0,
+            },
+            grid: { display: false },
+          },
+        },
+      },
+    });
+  }
+
+  // 3. VẼ ĐỒ THỊ ĐƯỜNG BÊN PHẢI (ẨN TRỤC Y CHÍNH)
   const ctx = document.getElementById("sensorChart");
   if (!ctx) return;
   if (chartInstance) chartInstance.destroy();
@@ -80,7 +141,8 @@ function renderChart(data) {
           borderColor: "#DC2626",
           backgroundColor: "rgba(220,38,38,0.08)",
           tension: 0.3,
-          pointRadius: 2,
+          pointRadius: 3,
+          pointHoverRadius: 5,
         },
         {
           label: "Độ ẩm (%)",
@@ -88,7 +150,8 @@ function renderChart(data) {
           borderColor: "#2563EB",
           backgroundColor: "rgba(37,99,235,0.08)",
           tension: 0.3,
-          pointRadius: 2,
+          pointRadius: 3,
+          pointHoverRadius: 5,
         },
         {
           label: "Ánh sáng (Lux)",
@@ -96,13 +159,14 @@ function renderChart(data) {
           borderColor: "#F59E0B",
           backgroundColor: "rgba(245,158,11,0.08)",
           tension: 0.3,
-          pointRadius: 2,
+          pointRadius: 3,
+          pointHoverRadius: 5,
         },
       ],
     },
     options: {
       responsive: true,
-      maintainAspectRatio: false, // QUAN TRỌNG: cho phép co giãn theo container
+      maintainAspectRatio: false,
       interaction: { mode: "index", intersect: false },
       plugins: {
         legend: {
@@ -113,17 +177,27 @@ function renderChart(data) {
       scales: {
         x: {
           type: "time",
-          time: { unit: "hour", tooltipFormat: "HH:mm dd/MM" },
-          ticks: { font: { size: 10 }, maxRotation: 0 },
-          grid: { display: false },
+          time: {
+            unit: "minute",
+            displayFormats: { minute: "HH:mm" },
+            tooltipFormat: "HH:mm:ss dd/MM",
+          },
+          ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: false },
+          grid: { color: "rgba(0,0,0,0.03)" },
         },
         y: {
-          ticks: { font: { size: 10 } },
-          grid: { color: "rgba(0,0,0,0.05)" },
+          min: 0,
+          max: maxYValue,
+          display: false, // Ẩn trục Y chính vì đã có trục Y cố định bên trái
         },
       },
     },
   });
+
+  // 4. TỰ ĐỘNG CUỘN VỀ BÊN PHẢI CÙNG ĐỂ THEO DÕI DỮ LIỆU REALTIME MỚI NHẤT
+  if (scrollContainer) {
+    scrollContainer.scrollLeft = scrollContainer.scrollWidth;
+  }
 }
 
 // ================== RENDER DANH SÁCH THIẾT BỊ ==================

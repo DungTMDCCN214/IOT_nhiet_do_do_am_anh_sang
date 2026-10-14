@@ -13,6 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 
   <style>
+    /* ================= BỐ CỤC KHÔNG CUỘN TOÀN TRANG ================= */
     html, body {
       height: 100%;
       margin: 0;
@@ -40,22 +41,23 @@
       margin-bottom: 0;
     }
 
-    /* Hàng 3 thẻ cảm biến: chiều cao cố định, gọn */
+    /* Hàng 3 thẻ cảm biến */
     .card-grid-3 {
       flex-shrink: 0;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 16px;
       height: 120px;
+      margin-bottom: 0;
     }
 
-    /* Hàng dưới: biểu đồ + panel thiết bị chiếm hết phần còn lại */
+    /* Hàng dưới */
     .dashboard-grid {
       flex: 1;
       display: grid;
       grid-template-columns: 2fr 1fr;
       gap: 16px;
-      min-height: 0; /* cho phép con co giãn trong flex */
+      min-height: 0;
     }
 
     .dashboard-grid > .card {
@@ -67,21 +69,70 @@
       box-sizing: border-box;
     }
 
-    /* Vùng chứa biểu đồ co giãn theo card */
-    .chart-container {
+    /* ===== BỐ CỤC KHUNG BIỂU ĐỒ CỐ ĐỊNH TRỤC Y ===== */
+    .chart-main-wrapper {
       flex: 1;
+      display: flex;
       position: relative;
       min-height: 0;
+      overflow: hidden;
+      border-radius: 8px;
     }
 
-    .chart-container canvas {
+    /* Khung chứa Trục Y cố định bên trái (Rộng 60px hiển thị đầy đủ số 3 chữ số) */
+    .y-axis-container {
+      width: 60px;
+      flex-shrink: 0;
+      height: 100%;
+      position: relative;
+      background: #ffffff;
+      z-index: 2;
+      border-right: 1px solid var(--border);
+    }
+    .y-axis-container canvas {
       position: absolute;
-      inset: 0;
+      top: 0;
+      left: 0;
       width: 100% !important;
       height: 100% !important;
     }
 
-    /* Panel thiết bị: danh sách tự cuộn bên trong */
+    /* Khung trượt chứa Đồ thị chính bên phải */
+    .chart-scroll-container {
+      flex: 1;
+      position: relative;
+      min-height: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    /* Custom thanh trượt cuộn ngang */
+    .chart-scroll-container::-webkit-scrollbar {
+      height: 6px;
+    }
+    .chart-scroll-container::-webkit-scrollbar-track {
+      background: var(--page-bg);
+      border-radius: 4px;
+    }
+    .chart-scroll-container::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .chart-scroll-container::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    .chart-scroll-wrapper {
+      height: 100%;
+      min-width: 100%;
+      position: relative;
+    }
+    .chart-scroll-wrapper canvas {
+      height: 100% !important;
+      width: 100% !important;
+    }
+
+    /* Panel thiết bị */
     #deviceList {
       flex: 1;
       overflow-y: auto;
@@ -89,7 +140,6 @@
       padding-right: 4px;
     }
 
-    /* Tinh chỉnh thẻ cảm biến cho vừa 120px */
     #sensorCards .card {
       padding: 12px 16px;
       display: flex;
@@ -116,13 +166,26 @@
     </div>
 
     <div class="dashboard-grid">
-      <!-- Biểu đồ 12h -->
+      <!-- Biểu đồ có TRỤC Y CỐ ĐỊNH + TRƯỢT NGANG DỮ LIỆU -->
       <div class="card">
-        <div style="font-weight:600; margin-bottom:12px; flex-shrink:0;">
-          Lịch sử chỉ số cảm biến (12h qua)
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-shrink:0;">
+          <div style="font-weight:600;">Lịch sử chỉ số cảm biến</div>
+          <div style="font-size:11px; color:var(--text-secondary);">
+            <i class="ti ti-arrows-left-right"></i> Kéo ngang để xem lịch sử
+          </div>
         </div>
-        <div class="chart-container">
-          <canvas id="sensorChart"></canvas>
+
+        <div class="chart-main-wrapper">
+          <!-- Trục Y cố định bên trái -->
+          <div class="y-axis-container">
+            <canvas id="yAxisChart"></canvas>
+          </div>
+          <!-- Vùng trượt ngang đồ thị bên phải -->
+          <div class="chart-scroll-container" id="chartScrollContainer">
+            <div class="chart-scroll-wrapper" id="chartScrollWrapper">
+              <canvas id="sensorChart"></canvas>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="/assets/css/style.css">
   <style>
-    /* ================= BỐ CỤC 1 TRANG DUY NHẤT ================= */
+    /* ================= BỐ CỤC KHÔNG CUỘN TOÀN TRANG ================= */
     html, body {
       height: 100%;
       margin: 0;
@@ -41,14 +41,14 @@
       overflow: hidden;
     }
 
-    /* ===== FILTER BAR: 1 HÀNG NGANG, CÁC Ô TỰ CO ===== */
+    /* ===== FILTER BAR LINH HOẠT ===== */
     .filter-bar {
       flex-shrink: 0;
       display: flex;
       flex-wrap: nowrap;
-      gap: 8px;
+      gap: 12px;
       align-items: flex-end;
-      padding-bottom: 8px;
+      padding-bottom: 12px;
       border-bottom: 1px solid var(--border, #e5e7eb);
       overflow: visible;
     }
@@ -58,28 +58,27 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
-      flex: 1 1 0;
-      min-width: 0;
     }
-    /* Ô "Loại cảm biến" rộng hơn một chút */
-    .filter-group.type-group {
-      flex: 1.3 1 0;
+    .filter-group.criteria-group {
+      width: 180px;
+    }
+    .filter-group.value-group {
+      flex: 1;
+      min-width: 220px;
     }
 
     .filter-group label {
       font-size: 12px;
       color: var(--text-secondary, #6b7280);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-weight: 500;
     }
 
-    /* ===== STYLE CHUNG CHO INPUT / SELECT ===== */
+    /* STYLE CHO INPUT / SELECT */
     .filter-group input[type="text"],
+    .filter-group input[type="number"],
     .filter-group select {
       width: 100%;
-      min-width: 0;
-      height: 34px;
+      height: 36px;
       box-sizing: border-box;
       font-size: 13px;
       padding: 0 10px;
@@ -90,17 +89,15 @@
       outline: none;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .filter-group input[type="text"]:focus,
+    .filter-group input:focus,
     .filter-group select:focus {
       border-color: var(--primary, #2563eb);
       box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
     }
 
-    /* SELECT: bỏ style mặc định, thêm mũi tên custom */
     .filter-group select {
       appearance: none;
       -webkit-appearance: none;
-      -moz-appearance: none;
       padding-right: 28px;
       background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
       background-repeat: no-repeat;
@@ -109,38 +106,30 @@
       cursor: pointer;
     }
 
-    /* Ô thời gian: bo viền giống các ô khác */
+    /* Ô thời gian */
     .datetime-input-wrap {
       position: relative;
       display: flex;
       align-items: center;
-      min-width: 0;
-      height: 34px;
+      width: 100%;
+      height: 36px;
       border: 1px solid var(--border, #d1d5db);
       border-radius: 8px;
       background: #fff;
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    .datetime-input-wrap:focus-within {
-      border-color: var(--primary, #2563eb);
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
     }
     .datetime-input-wrap input[type="text"] {
       flex: 1;
-      min-width: 0;
-      height: 100%;
       border: none;
-      border-radius: 8px;
-      padding: 0 40px 0 10px;
-      background: transparent;
       outline: none;
-      font-size: 13px;
+      padding: 0 40px 0 10px;
+      height: 100%;
+      background: transparent;
     }
     .datetime-input-wrap .calendar-icon-btn {
       position: absolute;
       right: 0;
       top: 0;
-      width: 34px;
+      width: 36px;
       height: 100%;
       background: #f8fafc;
       border: 0;
@@ -148,33 +137,22 @@
       border-radius: 0 7px 7px 0;
       cursor: pointer;
       color: #6b7280;
-      font-size: 17px;
-      padding: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 3;
     }
     .datetime-input-wrap .calendar-icon-btn:hover {
       color: #fff;
       background: var(--primary, #2563eb);
     }
-    .datetime-input-wrap input[type="datetime-local"] {
-      position: absolute;
-      right: 4px;
-      width: 26px;
-      height: 26px;
-      opacity: 0;
-      cursor: pointer;
-      z-index: 2;
-    }
+    
     .time-picker-panel {
       display: none;
       position: absolute;
-      right: 0;
+      left: 0;
       top: calc(100% + 6px);
-      z-index: 10;
-      width: 250px;
+      z-index: 100;
+      width: 260px;
       padding: 10px;
       border: 1px solid var(--border, #d1d5db);
       border-radius: 8px;
@@ -183,27 +161,28 @@
     }
     .time-picker-panel.open { display: block; }
     .time-part-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .time-part-grid select { height: 32px; min-width: 0; }
+    .time-part-grid select { height: 32px; }
     .time-picker-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
 
-    /* Nút Tìm + Làm mới */
-    .filter-bar .search-btn {
-      flex: 0 0 auto;
-      height: 34px;
-      align-self: flex-end;
-      white-space: nowrap;
-      padding: 0 14px;
+    /* Nút bấm */
+    .search-btn {
+      height: 36px;
+      padding: 0 16px;
       border-radius: 8px;
       font-size: 13px;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
+      background: var(--primary, #2563eb);
+      color: #fff;
+      border: none;
+      cursor: pointer;
     }
-    .filter-bar .icon-btn {
-      flex: 0 0 auto;
-      height: 34px;
-      width: 34px;
-      align-self: flex-end;
+    .search-btn:hover { opacity: 0.9; }
+
+    .icon-btn {
+      height: 36px;
+      width: 36px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -213,22 +192,10 @@
       color: #374151;
       cursor: pointer;
       font-size: 16px;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
-    .filter-bar .icon-btn:hover {
-      background: #f3f4f6;
-      color: var(--primary, #2563eb);
-      border-color: var(--primary, #2563eb);
-    }
-    .filter-bar .icon-btn.is-loading i {
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
+    .icon-btn:hover { background: #f3f4f6; color: var(--primary, #2563eb); }
 
-    /* ===== VÙNG BẢNG TỰ CUỘN ===== */
+    /* ===== BẢNG CUỘN ===== */
     .table-scroll {
       flex: 1;
       overflow-y: auto;
@@ -249,7 +216,6 @@
       border-bottom: 1px solid var(--border, #e5e7eb);
       font-weight: 600;
       font-size: 13px;
-      white-space: nowrap;
     }
     .table-scroll tbody td {
       padding: 10px 12px;
@@ -265,8 +231,28 @@
       justify-content: space-between;
       align-items: center;
       gap: 12px;
-      flex-wrap: wrap;
     }
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--text-secondary, #6b7280);
+    }
+    .limit-select-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .limit-select-wrap select {
+      height: 30px;
+      border-radius: 6px;
+      border: 1px solid var(--border, #d1d5db);
+      padding: 0 6px;
+      font-size: 12px;
+      outline: none;
+    }
+
     .pagination {
       display: flex;
       gap: 4px;
@@ -291,26 +277,11 @@
       cursor: not-allowed;
     }
 
-    /* ===== CSS FALLBACK CHO MÀU THEO LOẠI CẢM BIẾN ===== */
+    /* Đổi màu loại cảm biến */
     .type-temp  { color:#DC2626; font-weight:500; }
     .type-hum   { color:#2563EB; font-weight:500; }
     .type-light { color:#F59E0B; font-weight:500; }
-
     .mono-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color:#6b7280; }
-
-    /* Responsive */
-    @media (max-width: 1200px) {
-      .main-content { padding: 12px 16px; gap: 12px; }
-      .filter-bar { gap: 6px; }
-      .filter-group label { font-size: 11px; }
-      .filter-group input[type="text"],
-      .filter-group select { height: 30px; font-size: 12px; padding: 0 8px; }
-      .datetime-input-wrap { height: 30px; }
-      .datetime-input-wrap input[type="text"] { font-size: 12px; }
-      .filter-bar .search-btn,
-      .filter-bar .icon-btn { height: 30px; font-size: 12px; }
-      .filter-bar .icon-btn { width: 30px; }
-    }
   </style>
 </head>
 <body>
@@ -330,59 +301,35 @@
     </div>
 
     <div class="card">
-      <!-- ================= FILTER BAR: 1 HÀNG NGANG (ĐÃ BỎ TÌM KIẾM NHANH) ================= -->
+      <!-- ================= THANH BỘ LỌC ĐỘNG (DYNAMICTIC FILTER) ================= -->
       <div class="filter-bar">
-        <div class="filter-group type-group">
-          <label>Loại cảm biến</label>
-          <select class="filter-select" id="typeFilter">
-            <option value="">Tất cả</option>
+        <!-- Ô 1: Chọn tiêu chí -->
+        <div class="filter-group criteria-group">
+          <label>Tiêu chí tìm kiếm</label>
+          <select id="criteriaSelect">
+            <option value="all">Tất cả</option>
             <option value="temperature">Nhiệt độ</option>
             <option value="humidity">Độ ẩm</option>
             <option value="light">Ánh sáng</option>
+            <option value="type">Loại cảm biến</option>
+            <option value="time">Thời gian</option>
           </select>
         </div>
 
-        <div class="filter-group">
-          <label>Giá trị</label>
-          <input type="text" id="valueFilter" placeholder="Giá trị...">
+        <!-- Ô 2: Ô nhập/chọn giá trị linh hoạt theo tiêu chí -->
+        <div class="filter-group value-group" id="filterValueContainer">
+          <label id="valueLabel">Giá trị tìm kiếm</label>
+          <input type="text" id="valueInput" placeholder="Tất cả dữ liệu" disabled />
         </div>
 
-        <div class="filter-group">
-          <label>Số bản ghi</label>
-          <select class="filter-select" id="limitFilter">
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label>Thời gian</label>
-          <div class="datetime-input-wrap">
-            <input type="text" id="timeFilter" placeholder="dd/MM/yyyy HH:mm">
-            <button type="button" class="calendar-icon-btn" id="calendarBtn" title="Chọn thời gian" aria-label="Chọn thời gian">
-              <span aria-hidden="true">&#128197;</span>
-            </button>
-          </div>
-          <div class="time-picker-panel" id="timePickerPanel">
-            <div class="time-part-grid">
-              <select id="yearPart" aria-label="Năm"><option value="">Năm</option></select>
-              <select id="monthPart" aria-label="Tháng"><option value="">Tháng</option></select>
-              <select id="dayPart" aria-label="Ngày"><option value="">Ngày</option></select>
-              <select id="hourPart" aria-label="Giờ"><option value="">Giờ</option></select>
-              <select id="minutePart" aria-label="Phút"><option value="">Phút</option></select>
-            </div>
-            <div class="time-picker-actions"><button type="button" class="search-btn" id="applyTimeBtn">Áp dụng</button></div>
-          </div>
-        </div>
-
+        <!-- Nút Tìm & Làm mới -->
         <button class="search-btn" id="searchBtn"><i class="ti ti-search"></i> Tìm</button>
-        <button type="button" class="icon-btn" id="refreshBtn" title="Làm mới dữ liệu" aria-label="Làm mới dữ liệu">
-          <i class="ti ti-refresh"></i>
+        <button type="button" class="icon-btn" id="refreshBtn" title="Làm mới dữ liệu">
+          <i class="ti ti-refresh"></i> Đặt
         </button>
       </div>
 
-      <!-- ================= BẢNG (tự cuộn) ================= -->
+      <!-- ================= BẢNG DỮ LIỆU ================= -->
       <div class="table-scroll">
         <table>
           <thead>
@@ -398,9 +345,21 @@
         </table>
       </div>
 
-      <!-- ================= FOOTER (cố định) ================= -->
+      <!-- ================= FOOTER (CHÂN TRANG) ================= -->
       <div class="table-footer">
-        <div id="resultInfo">Hiển thị 0 bản ghi</div>
+        <div class="footer-left">
+          <div id="resultInfo">Hiển thị 0 bản ghi</div>
+          <div class="limit-select-wrap">
+            <span>Hiển thị:</span>
+            <select id="limitFilter">
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+            <span>bản ghi/trang</span>
+          </div>
+        </div>
+
         <div class="pagination" id="pagination"></div>
       </div>
     </div>
@@ -408,28 +367,5 @@
 </div>
 
 <script src="/assets/js/sensors.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const calendarBtn = document.getElementById('calendarBtn');
-    const timeFilter = document.getElementById('timeFilter');
-    const panel = document.getElementById('timePickerPanel');
-    const parts = ['yearPart', 'monthPart', 'dayPart', 'hourPart', 'minutePart'].map(id => document.getElementById(id));
-    const addOptions = (select, max, start = 1) => { for (let i = start; i <= max; i++) select.add(new Option(String(i).padStart(2, '0'), i)); };
-    const now = new Date();
-    for (let year = now.getFullYear() + 1; year >= 2020; year--) parts[0].add(new Option(year, year));
-    addOptions(parts[1], 12); addOptions(parts[2], 31); addOptions(parts[3], 23, 0); addOptions(parts[4], 59, 0);
-    calendarBtn?.addEventListener('click', () => panel.classList.toggle('open'));
-    document.getElementById('applyTimeBtn')?.addEventListener('click', () => {
-      const [year, month, day, hour, minute] = parts.map(part => part.value);
-      if (!year) { timeFilter.value = ''; }
-      else if (!month) { timeFilter.value = year; }
-      else if (!day) { timeFilter.value = String(month).padStart(2, '0') + '/' + year; }
-      else if (!hour) { timeFilter.value = String(day).padStart(2, '0') + '/' + String(month).padStart(2, '0') + '/' + year; }
-      else if (!minute) { timeFilter.value = String(day).padStart(2, '0') + '/' + String(month).padStart(2, '0') + '/' + year + ' ' + String(hour).padStart(2, '0'); }
-      else { timeFilter.value = String(day).padStart(2, '0') + '/' + String(month).padStart(2, '0') + '/' + year + ' ' + String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0'); }
-      panel.classList.remove('open');
-    });
-  });
-</script>
 </body>
 </html>
