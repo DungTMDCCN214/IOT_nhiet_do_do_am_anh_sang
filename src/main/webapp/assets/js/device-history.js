@@ -8,12 +8,15 @@ let state = {
   range: "",
 };
 
+// Hàm định dạng ngày giờ từ chuỗi ISO sang dd/MM/yyyy HH:mm:ss
 function formatDateTime(iso) {
+  if (!iso) return "--";
   const d = new Date(iso);
   const pad = (n) => String(n).padStart(2, "0");
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
+// Xác định icon và class màu dựa trên tên thiết bị
 function deviceIcon(deviceName) {
   const name = (deviceName || "").toLowerCase();
   if (name.includes("nhiệt"))
@@ -24,6 +27,7 @@ function deviceIcon(deviceName) {
   return { icon: "ti-plug", cls: "" };
 }
 
+// Trả về badge trạng thái tương ứng
 function statusBadge(status) {
   if (status === "Success")
     return '<span class="badge-success">Thành công</span>';
@@ -31,6 +35,7 @@ function statusBadge(status) {
   return '<span class="badge-warning">Đang xử lý</span>';
 }
 
+// Tải số liệu tổng quan thiết bị đang hoạt động
 function loadStatusSummary() {
   fetch("/api/sensors/status-summary")
     .then((res) => res.json())
@@ -43,6 +48,7 @@ function loadStatusSummary() {
     .catch(() => {});
 }
 
+// Tải danh sách thiết bị đổ vào ô filter
 function loadDeviceOptions() {
   fetch("/api/devices")
     .then((res) => res.json())
@@ -62,6 +68,7 @@ function loadDeviceOptions() {
     .catch(() => {});
 }
 
+// Gọi API lấy dữ liệu lịch sử theo bộ lọc hiện tại
 function loadTable() {
   const params = new URLSearchParams({ page: state.page, limit: state.limit });
   if (state.deviceId) params.set("deviceId", state.deviceId);
@@ -94,6 +101,30 @@ function loadTable() {
     });
 }
 
+// HÀM XỬ LÝ COPY: Chép text vào clipboard và hiện toast thông báo
+function copyToClipboard(text) {
+  if (!text || text === "--") return;
+
+  navigator.clipboard
+    .writeText(text)
+    .then(() => {
+      const toast = document.createElement("div");
+      toast.textContent = `Đã sao chép: ${text}`;
+      toast.style.cssText = `
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: #10b981; color: white; padding: 8px 16px; border-radius: 6px;
+      font-size: 13px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      animation: fadeInOut 2s ease forwards;
+    `;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2000);
+    })
+    .catch((err) => {
+      console.error("Không thể sao chép: ", err);
+    });
+}
+
+// Render bảng dữ liệu, có gắn nút copy vào cột thời gian
 function renderTable(rows) {
   const tbody = document.getElementById("historyTableBody");
   if (!tbody) return;
@@ -108,12 +139,20 @@ function renderTable(rows) {
   rows.forEach((row, idx) => {
     const meta = deviceIcon(row.device.deviceName);
     const stt = state.page * state.limit + idx + 1;
+    const timeStr = formatDateTime(row.performedAt);
 
     html += `
       <tr>
         <td>${stt}</td>
         <td class="mono-code"># ${row.device.deviceId}</td>
-        <td>${formatDateTime(row.performedAt)}</td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span>${timeStr}</span>
+            <button class="copy-btn" title="Sao chép thời gian" data-time="${timeStr}" onclick="copyToClipboard(this.getAttribute('data-time'))">
+              <i class="ti ti-copy"></i>
+            </button>
+          </div>
+        </td>
         <td class="${meta.cls}"><i class="ti ${meta.icon}"></i> ${row.device.deviceName}</td>
         <td>${row.action}</td>
         <td>${row.user ? row.user.fullName : "--"}</td>
@@ -123,6 +162,7 @@ function renderTable(rows) {
   tbody.innerHTML = html;
 }
 
+// Render phần phân trang và thông tin hiển thị
 function renderFooter(total, page) {
   const limit = state.limit;
   const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -164,6 +204,7 @@ function renderFooter(total, page) {
   );
 }
 
+// Đọc giá trị từ các ô filter rồi gọi loadTable
 function applyFiltersAndSearch() {
   // ĐÃ BỎ: đọc #searchInput (vì JSP không còn ô này)
   state.deviceId = document.getElementById("deviceFilter")?.value || "";
@@ -191,7 +232,7 @@ document.getElementById("timeFilter")?.addEventListener("keydown", (e) => {
   }
 });
 
-// Nút Làm mới
+// Nút Làm mới: reset toàn bộ state và các ô filter
 document.getElementById("refreshBtn")?.addEventListener("click", () => {
   const button = document.getElementById("refreshBtn");
   button.disabled = true;

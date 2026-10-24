@@ -110,6 +110,7 @@
       cursor: pointer;
     }
 
+    /* Ô thời gian */
     .datetime-input-wrap {
       position: relative;
       display: flex;
@@ -213,6 +214,42 @@
     @keyframes spin {
       from { transform: rotate(0deg); }
       to   { transform: rotate(360deg); }
+    }
+
+    /* Style cho nút Copy thời gian */
+    .copy-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #eaee0b; /* Màu vang */
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      opacity: 0.7; /* Mờ đi khi không hover */
+    }
+
+    /* Khi hover vào dòng, nút hiện rõ lên */
+    .table-scroll tbody tr:hover .copy-btn {
+      opacity: 1;
+      background: #dceb10;
+      border-color: #ebdc11;
+      color: var(--primary, #2563eb);
+    }
+
+    .copy-btn:hover {
+      background: #dbeafe !important;
+      color: var(--primary, #2563eb) !important;
+    }
+
+    /* Hiệu ứng cho thông báo Toast */
+    @keyframes fadeInOut {
+      0% { opacity: 0; bottom: 10px; }
+      10% { opacity: 1; bottom: 20px; }
+      90% { opacity: 1; bottom: 20px; }
+      100% { opacity: 0; bottom: 30px; }
     }
 
     /* ===== VÙNG BẢNG TỰ CUỘN ===== */
@@ -375,7 +412,7 @@
               <span aria-hidden="true">&#128197;</span>
             </button>
           </div>
-          <div class="time-picker-panel" id="timePickerPanel"><div class="time-part-grid"><select id="yearPart" aria-label="Năm"><option value="">Năm</option></select><select id="monthPart" aria-label="Tháng"><option value="">Tháng</option></select><select id="dayPart" aria-label="Ngày"><option value="">Ngày</option></select><select id="hourPart" aria-label="Giờ"><option value="">Giờ</option></select><select id="minutePart" aria-label="Phút"><option value="">Phút</option></select></div><div class="time-picker-actions"><button type="button" class="search-btn" id="applyTimeBtn">Áp dụng</button></div></div>
+          <div class="time-picker-panel" id="timePickerPanel"><div class="time-part-grid"><select id="yearPart" aria-label="Năm"><option value="">Năm</option></select><select id="monthPart" aria-label="Tháng"><option value="">Tháng</option></select><select id="dayPart" aria-label="Ngày"><option value="">Ngày</option></select><select id="hourPart" aria-label="Giờ"><option value="">Giờ</option></select><select id="minutePart" aria-label="Phút"><option value="">Phút</option></select><select id="secondPart" aria-label="Giây"><option value="">Giây</option></select></div><div class="time-picker-actions"><button type="button" class="search-btn" id="applyTimeBtn">Áp dụng</button></div></div>
         </div>
 
         <button class="search-btn" id="searchBtn"><i class="ti ti-search"></i> Tìm</button>
@@ -401,22 +438,22 @@
           <tbody id="historyTableBody"></tbody>
         </table>
       </div>
-    </div>
 
-    <!-- ================= FOOTER PHÂN TRANG (CỐ ĐỊNH CHÂN TRANG) ================= -->
-    <div class="table-footer">
-      <div class="footer-left">
-        <div id="resultInfo">Hiển thị 0 bản ghi</div>
-        <div class="page-size-selector">
-          <span>Hiển thị:</span>
-          <select id="limitFilter">
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
+      <!-- ================= FOOTER PHÂN TRANG (ĐÃ CHUYỂN VÀO TRONG CARD) ================= -->
+      <div class="table-footer">
+        <div class="footer-left">
+          <div id="resultInfo">Hiển thị 0 bản ghi</div>
+          <div class="page-size-selector">
+            <span>Hiển thị:</span>
+            <select id="limitFilter">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
         </div>
+        <div class="pagination" id="pagination"></div>
       </div>
-      <div class="pagination" id="pagination"></div>
     </div>
   </div>
 </div>
@@ -427,20 +464,21 @@
     const calendarBtn = document.getElementById('calendarBtn');
     const timeFilter = document.getElementById('timeFilter');
     const panel = document.getElementById('timePickerPanel');
-    const parts = ['yearPart', 'monthPart', 'dayPart', 'hourPart', 'minutePart'].map(id => document.getElementById(id));
+    const parts = ['yearPart', 'monthPart', 'dayPart', 'hourPart', 'minutePart', 'secondPart'].map(id => document.getElementById(id));
     const addOptions = (select, max, start = 1) => { for (let i = start; i <= max; i++) select.add(new Option(String(i).padStart(2, '0'), i)); };
     const now = new Date();
     for (let year = now.getFullYear() + 1; year >= 2020; year--) parts[0].add(new Option(year, year));
-    addOptions(parts[1], 12); addOptions(parts[2], 31); addOptions(parts[3], 23, 0); addOptions(parts[4], 59, 0);
+    addOptions(parts[1], 12); addOptions(parts[2], 31); addOptions(parts[3], 23, 0); addOptions(parts[4], 59, 0); addOptions(parts[5], 59, 0);
     calendarBtn?.addEventListener('click', () => panel.classList.toggle('open'));
     document.getElementById('applyTimeBtn')?.addEventListener('click', () => {
-      const [year, month, day, hour, minute] = parts.map(part => part.value);
+      const [year, month, day, hour, minute, second] = parts.map(part => part.value);
       if (!year) { timeFilter.value = ''; }
       else if (!month) { timeFilter.value = year; }
       else if (!day) { timeFilter.value = String(month).padStart(2, '0') + '/' + year; }
       else if (!hour) { timeFilter.value = String(day).padStart(2, '0') + '/' + String(month).padStart(2, '0') + '/' + year; }
       else if (!minute) { timeFilter.value = String(day).padStart(2, '0') + '/' + String(month).padStart(2, '0') + '/' + year + ' ' + String(hour).padStart(2, '0'); }
-      else { timeFilter.value = String(day).padStart(2, '0') + '/' + String(month).padStart(2, '0') + '/' + year + ' ' + String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0'); }
+      else if (!second) { timeFilter.value = String(day).padStart(2, '0') + '/' + String(month).padStart(2, '0') + '/' + year + ' ' + String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0'); }
+      else { timeFilter.value = String(day).padStart(2, '0') + '/' + String(month).padStart(2, '0') + '/' + year + ' ' + String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0') + ':' + String(second).padStart(2, '0'); }
       panel.classList.remove('open');
     });
   });

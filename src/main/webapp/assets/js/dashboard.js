@@ -214,6 +214,7 @@ function renderDeviceList(devices) {
   devices.forEach((device) => {
     const checked = device.currentStatus === "ON" ? "checked" : "";
     const pending = device.currentStatus === "PENDING";
+
     container.innerHTML += `
       <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border);">
         <div style="min-width:0; padding-right:8px;">
@@ -224,8 +225,8 @@ function renderDeviceList(devices) {
             Status: ${device.currentStatus}
           </div>
         </div>
-        <label class="toggle-switch" style="flex-shrink:0;">
-          <input type="checkbox" ${checked} ${pending ? "disabled" : ""} onchange="controlDevice('${device.deviceId}', this.checked)">
+        <label class="toggle-switch ${pending ? "is-loading" : ""}" style="flex-shrink:0;">
+          <input type="checkbox" ${checked} ${pending ? "disabled" : ""} onchange="controlDevice('${device.deviceId}', this)">
           <span class="toggle-track"></span>
         </label>
       </div>`;
@@ -233,7 +234,20 @@ function renderDeviceList(devices) {
 }
 
 // ================== ĐIỀU KHIỂN THIẾT BỊ ==================
-function controlDevice(deviceId, turnOn) {
+function controlDevice(deviceId, checkbox) {
+  const turnOn = checkbox.checked;
+
+  // 1. Giữ nguyên trạng thái người dùng vừa gạt để thấy phản hồi trực quan
+  // (Không đảo ngược checkbox.checked = !turnOn như code cũ)
+
+  // 2. Thêm hiệu ứng xoay tròn và vô hiệu hóa nút bấm tạm thời
+  const toggleSwitch = checkbox.closest(".toggle-switch");
+  if (toggleSwitch) {
+    toggleSwitch.classList.add("is-loading");
+  }
+  checkbox.disabled = true;
+
+  // 3. Gửi yêu cầu API xuống hệ thống
   fetch(`/api/devices/${deviceId}/control`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -246,7 +260,16 @@ function controlDevice(deviceId, turnOn) {
       }
       return res.json();
     })
-    .then(() => setTimeout(loadDevices, 1000));
+    .then(() => {
+      // Đợi phản hồi hoàn tất từ phần cứng/MQTT thông qua WebSocket đẩy về hoặc gọi lại loadDevices
+      setTimeout(loadDevices, 1000);
+    })
+    .catch(() => {
+      // Nếu lỗi mạng: Gỡ loading, mở khóa và TRẢ LẠI trạng thái ban đầu (đảo ngược lại)
+      if (toggleSwitch) toggleSwitch.classList.remove("is-loading");
+      checkbox.disabled = false;
+      checkbox.checked = !turnOn;
+    });
 }
 
 // ================== LOAD DỮ LIỆU ==================

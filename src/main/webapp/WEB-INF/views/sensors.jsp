@@ -195,6 +195,43 @@
     }
     .icon-btn:hover { background: #f3f4f6; color: var(--primary, #2563eb); }
 
+
+
+        /* Style cho nút Copy thời gian */
+    .copy-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #eeea0d; /* Màu vang */
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      opacity: 0.7; /* Mờ đi khi không hover */
+    }
+
+    /* Khi hover vào dòng, nút hiện rõ lên */
+    .table-scroll tbody tr:hover .copy-btn {
+      opacity: 1;
+      background: #d9e712;
+      border-color: #e2df1e;
+      color: var(--primary, #2563eb);
+    }
+
+    .copy-btn:hover {
+      background: #dbeafe !important;
+      color: var(--primary, #2563eb) !important;
+    }
+
+    /* Hiệu ứng cho thông báo Toast */
+    @keyframes fadeInOut {
+      0% { opacity: 0; bottom: 10px; }
+      10% { opacity: 1; bottom: 20px; }
+      90% { opacity: 1; bottom: 20px; }
+      100% { opacity: 0; bottom: 30px; }
+    }
     /* ===== BẢNG CUỘN ===== */
     .table-scroll {
       flex: 1;

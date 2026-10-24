@@ -77,6 +77,30 @@ function loadTable() {
     });
 }
 
+// HÀM XỬ LÝ COPY
+function copyToClipboard(text) {
+  if (!text || text === "--") return;
+
+  navigator.clipboard
+    .writeText(text)
+    .then(() => {
+      const toast = document.createElement("div");
+      toast.textContent = `Đã sao chép: ${text}`;
+      toast.style.cssText = `
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: #10b981; color: white; padding: 8px 16px; border-radius: 6px;
+      font-size: 13px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      animation: fadeInOut 2s ease forwards;
+    `;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2000);
+    })
+    .catch((err) => {
+      console.error("Không thể sao chép: ", err);
+    });
+}
+
+// HÀM RENDER BẢNG
 function renderTable(rows) {
   const tbody = document.getElementById("sensorTableBody");
   if (!tbody) return;
@@ -95,12 +119,21 @@ function renderTable(rows) {
       unit: "",
     };
     const stt = state.page * state.limit + idx + 1;
+    const timeStr = formatDateTime(row.recordedAt);
 
+    // Dùng data-time để tránh lỗi cú pháp JS khi chuỗi có dấu nháy đơn
     html += `
       <tr>
         <td>${stt}</td>
         <td class="mono-code"># ${row.sensor.sensorCode}</td>
-        <td>${formatDateTime(row.recordedAt)}</td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span>${timeStr}</span>
+            <button class="copy-btn" title="Sao chép thời gian" data-time="${timeStr}" onclick="copyToClipboard(this.getAttribute('data-time'))">
+              <i class="ti ti-copy"></i>
+            </button>
+          </div>
+        </td>
         <td class="${meta.cls}"><i class="ti ${meta.icon}"></i> ${meta.label}</td>
         <td class="${meta.cls}"><i class="ti ${meta.icon}"></i> ${row.value}${meta.unit}</td>
       </tr>`;
@@ -218,6 +251,7 @@ function handleCriteriaChange() {
           <select id="dayPart"><option value="">Ngày</option></select>
           <select id="hourPart"><option value="">Giờ</option></select>
           <select id="minutePart"><option value="">Phút</option></select>
+          <select id="secondPart"><option value="">Giây</option></select>
         </div>
         <div class="time-picker-actions">
           <button type="button" class="search-btn" id="applyTimeBtn">Áp dụng</button>
@@ -240,6 +274,7 @@ function initTimePicker() {
     "dayPart",
     "hourPart",
     "minutePart",
+    "secondPart",
   ].map((id) => document.getElementById(id));
   const addOptions = (select, max, start = 1) => {
     for (let i = start; i <= max; i++)
@@ -253,6 +288,7 @@ function initTimePicker() {
   addOptions(parts[2], 31);
   addOptions(parts[3], 23, 0);
   addOptions(parts[4], 59, 0);
+  addOptions(parts[5], 59, 0);
 
   calendarBtn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -260,7 +296,7 @@ function initTimePicker() {
   });
 
   document.getElementById("applyTimeBtn")?.addEventListener("click", () => {
-    const [year, month, day, hour, minute] = parts.map((part) => part.value);
+    const [year, month, day, hour, minute, second] = parts.map((part) => part.value);
     if (!year) {
       timeFilter.value = "";
     } else if (!month) {
@@ -283,7 +319,7 @@ function initTimePicker() {
         year +
         " " +
         String(hour).padStart(2, "0");
-    } else {
+    } else if (!second) {
       timeFilter.value =
         String(day).padStart(2, "0") +
         "/" +
@@ -294,6 +330,11 @@ function initTimePicker() {
         String(hour).padStart(2, "0") +
         ":" +
         String(minute).padStart(2, "0");
+    } else {
+      timeFilter.value =
+        String(day).padStart(2, "0") + "/" + String(month).padStart(2, "0") + "/" + year +
+        " " + String(hour).padStart(2, "0") + ":" + String(minute).padStart(2, "0") +
+        ":" + String(second).padStart(2, "0");
     }
     panel.classList.remove("open");
     state.time = timeFilter.value.trim();
@@ -347,7 +388,7 @@ document.getElementById("refreshBtn")?.addEventListener("click", () => {
   const button = document.getElementById("refreshBtn");
   if (button) {
     button.disabled = true;
-    button.classList.add("is-loading"); // Bật hiệu ứng xoay icon
+    button.classList.add("is-loading");
   }
 
   state = {

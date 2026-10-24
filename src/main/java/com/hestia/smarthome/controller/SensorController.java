@@ -134,6 +134,9 @@ public class SensorController {
         if (normalized.matches("\\d{2}/\\d{2}/\\d{4} \\d{2}")) {
             return LocalDateTime.parse(normalized + ":00", DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
         }
+        if (normalized.matches("\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2}")) {
+            return LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
+        }
         try {
             return LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
         } catch (DateTimeParseException ignored) {
@@ -155,6 +158,7 @@ public class SensorController {
         if (normalized.matches("\\d{2}/\\d{4}")) return from.plusMonths(1);
         if (isDateOnly(normalized)) return from.plusDays(1);
         if (normalized.matches("\\d{2}/\\d{2}/\\d{4} \\d{2}")) return from.plusHours(1);
+        if (normalized.matches("\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2}")) return from.plusSeconds(1);
         return from.plusMinutes(1);
     }
 }
